@@ -1,14 +1,26 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.22.1)
 project(AttackGraphGenerator)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
-add_executable(AttackGraphGenerator main.cpp
-        src/graph/Node.h
-        src/graph/AttackGraph.h
-        Generation.h)
+add_executable(AttackGraphGenerator src/main.cpp
+        src/graph/Node.hpp
+        src/graph/AttackGraph.hpp
+        src/Generation.hpp
+        src/io/GraphToCsv.hpp
+        src/io/FsUtils.hpp)
+
+find_package(effolkronium_random REQUIRED)
+find_package(argparse REQUIRED)
+
 
 target_include_directories(AttackGraphGenerator
         PRIVATE
         ${PROJECT_SOURCE_DIR}/src/graph
+        ${PROJECT_SOURCE_DIR}/src/io
+)
+
+target_link_libraries(AttackGraphGenerator
+        effolkronium_random
+        argparse::argparse
 )
