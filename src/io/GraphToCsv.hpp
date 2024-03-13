@@ -33,7 +33,7 @@ void graphToCsv(AttackGraph* graph, std::string *outDir, bool rndEdgeWeight) {
         else if (node->getType() == AND) type = "AND";
         else type = "OR";
 
-        vertFile << std::format("{},{},{},{}\n", node->getId(), *node->getDesc(), type,
+        vertFile << std::format("{},\"{}\",\"{}\",{}\n", node->getId(), node->getDesc(), type,
                                 node->getType() == LEAF? 1: 0);
 
         for (const auto& adj: *node->getAdj()) {

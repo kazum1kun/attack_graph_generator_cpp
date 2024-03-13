@@ -81,7 +81,7 @@ inline AttackGraph* generateGraph(const int numOr, const int numAnd, const int n
             desc = "r" + std::to_string(i - numOr - numLeaf);
         }
 
-        const auto node = new Node(i, type, &desc, iCap, oCap);
+        const auto node = new Node(i, type, desc, iCap, oCap);
         node->addPred(node);
         graph->addNode(node);
     }

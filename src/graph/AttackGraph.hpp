@@ -26,13 +26,16 @@ inline AttackGraph::AttackGraph(const int goal, const int numNodes, const int nu
     this->nodes = std::vector<Node*>(numNodes + 1);
     this->size = numNodes;
     this->numEdges = numEdges;
-    this->nodes.push_back(nullptr);
 }
 
-inline AttackGraph::~AttackGraph() = default;
+inline AttackGraph::~AttackGraph() {
+    for (const auto& node: this->nodes) {
+        delete node;
+    }
+}
 
 inline void AttackGraph::addNode(Node *node) {
-    this->nodes.push_back(node);
+    this->nodes[node->getId()] = node;
 }
 
 inline Node *AttackGraph::getNode(const int index) const {

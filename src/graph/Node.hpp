@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 enum NodeType {
     LEAF = 0,
@@ -14,12 +15,12 @@ class Node {
     int id;
     int iCap;
     int oCap;
-    const std::string *desc;
+    std::string desc;
     NodeType type;
     std::unordered_set<Node *> predecessor;
     std::unordered_set<Node *> adjacentNodes;
 public:
-    Node(int id, NodeType type, const std::string *desc, int iCap, int oCap);
+    Node(int id, NodeType type, std::string desc, int iCap, int oCap);
     ~Node();
     void addPred(Node* node);
     void addPred(std::unordered_set<Node*> *predSet);
@@ -31,16 +32,16 @@ public:
     int getId() const;
     int getICap() const;
     int getOCap() const;
-    std::string* getDesc() const;
+    std::string getDesc() const;
     NodeType getType() const;
     std::unordered_set<Node*>* getPred();
     std::unordered_set<Node*>* getAdj();
 };
 
-inline Node::Node(const int id, const NodeType type, const std::string *desc, const int iCap, const int oCap) {
+inline Node::Node(const int id, const NodeType type, std::string desc, const int iCap, const int oCap) {
     this->id = id;
     this->type = type;
-    this->desc = desc;
+    this->desc = std::move(desc);
     this->iCap = iCap;
     this->oCap = oCap;
 
@@ -109,8 +110,8 @@ inline bool Node::predContains(std::unordered_set<Node*> *otherSet) const {
     return true;
 }
 
-std::string* Node::getDesc() const {
-    return const_cast<std::string *>(this->desc);
+std::string Node::getDesc() const {
+    return this->desc;
 }
 
 

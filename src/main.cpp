@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     program.add_argument("-s", "--seed")
             .help("random seed")
             .scan<'i', int>()
-            .default_value(std::time(nullptr));
+            .default_value(static_cast<unsigned long>(std::time(nullptr)));
     program.add_argument("-o", "--outdir")
             .help("output directory")
             .default_value("./");
@@ -52,21 +52,21 @@ int main(int argc, char *argv[]) {
 
     auto nodes = program.get<std::vector<int>>("node");
     auto edge = program.get<int>("edge");
-    auto cycle = program["-c"];
-    auto seed = program.get<int>("-s");
-    auto outDir = program.get("-o");
-    auto drawGraph = program["-g"];
-    auto relaxed = program["-r"];
-    auto vertSed = program.get("-vs");
-    auto arcSed = program.get("-as");
-    auto randW = program["-r"];
+    auto cycle = program.get<bool>("-c");
+    auto seed = program.get<unsigned long>("-s");
+    auto outDir = program.get<std::string>("-o");
+    auto drawGraph = program.get<bool>("-g");
+    auto relaxed = program.get<bool>("-r");
+    auto vertSed = program.get<std::string>("-vs");
+    auto arcSed = program.get<std::string>("-as");
+    auto randW = program.get<bool>("-r");
 
     int numOr = nodes[0];
     int numLeaf = nodes[1];
     int numAnd = nodes[2];
 //    int minEdge = (numLeaf + 2*numAnd + numOr) / 2;
     int maxEdge;
-    if (relaxed == false) {
+    if (!relaxed) {
         maxEdge = numLeaf * numAnd + numOr * numAnd;
         if (numOr > numAnd) {
             std::cerr << "Error: number of OR node cannot be greater than number of AND node" << std::endl;
@@ -81,10 +81,10 @@ int main(int argc, char *argv[]) {
         std::exit(1);
     }
 
-    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle==true, relaxed==true, seed);
-    graphToCsv(graph, &outDir, randW==true);
+    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
+    graphToCsv(graph, &outDir, randW);
 
-    if (drawGraph==true) {
+    if (drawGraph) {
 
     }
 
