@@ -1,0 +1,10 @@
+{
+    "version": 4,
+    "vendor": {
+        "conan": {}
+    },
+    "include": [
+        "/home/kazuma/CLionProjects/attack_graph_generator_cpp/cmake-build-debug/build/Release/generators/CMakePresets.json",
+        "/home/kazuma/CLionProjects/attack_graph_generator_cpp/cmake-build-debug/conan/build/Debug/generators/CMakePresets.json"
+    ]
+}
