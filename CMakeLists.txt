@@ -8,7 +8,8 @@ add_executable(AttackGraphGenerator src/main.cpp
         src/graph/AttackGraph.hpp
         src/Generation.hpp
         src/io/GraphToCsv.hpp
-        src/io/FsUtils.hpp)
+        src/io/FsUtils.hpp
+        src/io/CsvToPdf.hpp)
 
 find_package(effolkronium_random REQUIRED)
 find_package(argparse REQUIRED)
