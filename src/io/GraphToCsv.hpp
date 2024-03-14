@@ -16,15 +16,15 @@ double generateEdgeWeight(int edgeNum) {
 
 }
 
-void graphToCsv(AttackGraph* graph, std::string *outDir, bool rndEdgeWeight) {
+void graphToCsv(AttackGraph* graph, std::string& outDir, bool rndEdgeWeight) {
     // First create the folder if not exist
     std::error_code err;
-    if (!CreateDirectoryRecursive(*outDir, err))
+    if (!CreateDirectoryRecursive(outDir, err))
         std::cerr << "Error creating folder " << outDir << ". " << err.message() << std::endl;
 
     // Then open/create the files for writing
-    std::fstream vertFile("VERTICES.TXT", std::ios::out | std::ios::trunc);
-    std::fstream arcFile("ARCS.TXT", std::ios::out | std::ios::trunc);
+    std::fstream vertFile(outDir + "/VERTICES.CSV", std::ios::out | std::ios::trunc);
+    std::fstream arcFile(outDir + "/ARCS.CSV", std::ios::out | std::ios::trunc);
 
     for (int i = 1; i <= graph->getSize(); ++i) {
         Node* node = graph->getNode(i);
@@ -35,6 +35,7 @@ void graphToCsv(AttackGraph* graph, std::string *outDir, bool rndEdgeWeight) {
 
         vertFile << std::format("{},\"{}\",\"{}\",{}\n", node->getId(), node->getDesc(), type,
                                 node->getType() == LEAF? 1: 0);
+        vertFile.close();
 
         for (const auto& adj: *node->getAdj()) {
             double edgeProb = 1.0;
@@ -42,6 +43,7 @@ void graphToCsv(AttackGraph* graph, std::string *outDir, bool rndEdgeWeight) {
 
             arcFile << std::format("{},{},{}\n", adj->getId(), node->getId(), edgeProb);
         }
+        arcFile.close();
     }
 }
 

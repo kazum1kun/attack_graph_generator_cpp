@@ -2,6 +2,7 @@
 #include <argparse/argparse.hpp>
 #include "Generation.hpp"
 #include "GraphToCsv.hpp"
+#include "CsvToPdf.hpp"
 
 int main(int argc, char *argv[]) {
     // Program argument parser
@@ -82,10 +83,9 @@ int main(int argc, char *argv[]) {
     }
 
     auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
-    graphToCsv(graph, &outDir, randW);
+    graphToCsv(graph, outDir, randW);
 
     if (drawGraph) {
-
+        csvToPdf(outDir, arcSed, vertSed);
     }
-
 }
