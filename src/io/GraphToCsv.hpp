@@ -35,7 +35,6 @@ void graphToCsv(AttackGraph* graph, std::string& outDir, bool rndEdgeWeight) {
 
         vertFile << std::format("{},\"{}\",\"{}\",{}\n", node->getId(), node->getDesc(), type,
                                 node->getType() == LEAF? 1: 0);
-        vertFile.close();
 
         for (const auto& adj: *node->getAdj()) {
             double edgeProb = 1.0;
@@ -43,8 +42,9 @@ void graphToCsv(AttackGraph* graph, std::string& outDir, bool rndEdgeWeight) {
 
             arcFile << std::format("{},{},{}\n", adj->getId(), node->getId(), edgeProb);
         }
-        arcFile.close();
     }
+    vertFile.close();
+    arcFile.close();
 }
 
 #endif //ATTACKGRAPHGENERATOR_GRAPHTOCSV_HPP
