@@ -6,16 +6,30 @@
 #include <queue>
 #include "effolkronium/random.hpp"
 
+extern bool verbose;
+
 inline bool addEdge(Node *src, Node *dst, const bool cycleOk) {
+    if (verbose) {
+        std::cout << "Attempting to add edge from " << src->getId() << " to " << dst->getId();
+    }
     // Check for cycles (a cycle is found when the dst predecessors are a subset of src predecessor)
     if (!cycleOk && src->predContains(dst->getPred())) {
+        if (verbose) {
+            std::cout << "...failed: will form a cycle" << std::endl;
+        }
         return false;
     }
     if (src->adjContains(dst)) {
+        if (verbose) {
+            std::cout << "...failed: already exists" << std::endl;
+        }
         return false;
     }
 
     src->addAdj(dst);
+    if (verbose) {
+        std::cout << "...ok" << std::endl;
+    }
 
     // Update pred info for non-cycle graphs
     if (!cycleOk) {
@@ -79,6 +93,11 @@ inline AttackGraph* generateGraph(const int numOr, const int numAnd, const int n
                 oCap = 1;
             }
             desc = "r" + std::to_string(i - numOr - numLeaf);
+        }
+
+        auto typeStr = (type == LEAF) ? "LEAF" : (type == OR) ? "OR" : "AND";
+        if (verbose) {
+            std::cout << "Generated node: {id = " << i << ", type = " << typeStr << "}" << std::endl;
         }
 
         const auto node = new Node(i, type, desc, iCap, oCap);

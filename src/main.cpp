@@ -4,6 +4,8 @@
 #include "GraphToCsv.hpp"
 #include "CsvToPdf.hpp"
 
+bool verbose;
+
 int main(int argc, char *argv[]) {
     // Program argument parser
     argparse::ArgumentParser program("AGG", "0.1.0");
@@ -41,6 +43,9 @@ int main(int argc, char *argv[]) {
     program.add_argument("-r", "--randw")
             .help("add random weights to the edges")
             .flag();
+    program.add_argument("-v", "--verbose")
+            .help("more verbose output")
+            .flag();
 
     try {
         program.parse_args(argc, argv);
@@ -61,6 +66,7 @@ int main(int argc, char *argv[]) {
     auto vertSed = program.get<std::string>("-vs");
     auto arcSed = program.get<std::string>("-as");
     auto randW = program.get<bool>("-r");
+    verbose = program.get<bool>("-v");
 
     int numOr = nodes[0];
     int numLeaf = nodes[1];
@@ -82,10 +88,34 @@ int main(int argc, char *argv[]) {
         std::exit(1);
     }
 
+    if (verbose) {
+        std::cout << "Starting generation with the following params:\n"
+                     "  numOr: " << numOr << "\n"
+                     "  numAnd: " << numAnd << "\n"
+                     "  numLeaf: " << numLeaf << "\n"
+                     "  numEdge: " << edge << "\n"
+                     "  seed: " << seed << "\n"
+                     "  cycle: " << cycle << "\n"
+                     "  drawGraph: " << drawGraph << "\n"
+                     "  relaxed: " << relaxed << "\n"
+                     "  outDir: " << outDir << "\n"
+                     "  vertSed: " << vertSed << "\n"
+                     "  acrdSed: " << arcSed << "\n"
+                     "  randW: " << randW << "\n"
+                     "  verbose: " << verbose << "\n";
+    }
+
     auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
+
+    if (verbose) {
+        std::cout << "Graph generated, saving it to files.";
+    }
     graphToCsv(graph, outDir, randW);
 
     if (drawGraph) {
+        if (verbose) {
+            std::cout << "Converting graph CSV to pdf file.";
+        }
         csvToPdf(outDir, arcSed, vertSed);
     }
 }
