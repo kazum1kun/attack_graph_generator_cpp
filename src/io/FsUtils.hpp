@@ -3,13 +3,10 @@
 
 #include <filesystem>
 
-bool CreateDirectoryRecursive(std::string const & dirName, std::error_code & err)
-{
+bool CreateDirectoryRecursive(std::string const &dirName, std::error_code &err) {
     err.clear();
-    if (!std::filesystem::create_directories(dirName, err))
-    {
-        if (std::filesystem::exists(dirName))
-        {
+    if (!std::filesystem::create_directories(dirName, err)) {
+        if (std::filesystem::exists(dirName)) {
             // The folder already exists:
             err.clear();
             return true;

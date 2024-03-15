@@ -6,7 +6,7 @@
 #include <fstream>
 
 
-std::string exec(const char* cmd) {
+std::string exec(const char *cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
     if (!pipe) return "ERROR";
     char buffer[128];
@@ -18,7 +18,7 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-void csvToPdf(const std::string& path, const std::string& arcSed, const std::string& vertSed) {
+void csvToPdf(const std::string &path, const std::string &arcSed, const std::string &vertSed) {
     std::fstream graphDotFile(path + "/AttackGraph.dot", std::ios::out | std::ios::trunc);
 
     graphDotFile << "digraph G {\n";

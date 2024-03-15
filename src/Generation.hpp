@@ -4,36 +4,42 @@
 #include "AttackGraph.hpp"
 #include <string>
 #include <queue>
+#include <list>
 #include "effolkronium/random.hpp"
 
-extern bool verbose;
+extern int verbosity;
 
-inline bool addEdge(Node *src, Node *dst, const bool cycleOk) {
-    if (verbose) {
+inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
+    if (verbosity > 1) {
         std::cout << "Attempting to add edge from " << src->getId() << " to " << dst->getId();
     }
     // Check for cycles (a cycle is found when the dst predecessors are a subset of src predecessor)
     if (!cycleOk && src->predContains(dst->getPred())) {
-        if (verbose) {
+        if (verbosity > 1) {
             std::cout << "...failed: will form a cycle" << std::endl;
         }
         return false;
     }
     if (src->adjContains(dst)) {
-        if (verbose) {
+        if (verbosity > 1) {
             std::cout << "...failed: already exists" << std::endl;
         }
         return false;
     }
-
+    if (src == dst) {
+        if (verbosity > 1) {
+            std::cout << "...failed: adding a self loop" << std::endl;
+        }
+        return false;
+    }
     src->addAdj(dst);
-    if (verbose) {
+    if (verbosity > 1) {
         std::cout << "...ok" << std::endl;
     }
 
     // Update pred info for non-cycle graphs
     if (!cycleOk) {
-        std::queue<Node*> q;
+        std::queue<GraphNode *> q;
 
         q.push(dst);
         while (!q.empty()) {
@@ -52,11 +58,9 @@ inline bool addEdge(Node *src, Node *dst, const bool cycleOk) {
     return true;
 }
 
-inline AttackGraph* generateGraph(const int numOr, const int numAnd, const int numLeaf,
-    int numEdge, const bool cycleOk, const bool relaxed, const unsigned long seed) {
+inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int numLeaf,
+                                  int numEdge, const bool cycleOk, const bool relaxed, const unsigned long seed) {
     const int total = numOr + numAnd + numLeaf;
-    const int leafPadding = 1 + numOr;
-    const int andPadding = 1 + numOr + numLeaf;
     using Random = effolkronium::random_static;
 
     Random::seed(seed);
@@ -65,7 +69,7 @@ inline AttackGraph* generateGraph(const int numOr, const int numAnd, const int n
     // Initialize nodes
     for (int i = 1; i <= total; i++) {
         NodeType type;
-        int iCap , oCap;
+        int iCap, oCap;
         std::string desc;
 
         // Goal node
@@ -96,49 +100,56 @@ inline AttackGraph* generateGraph(const int numOr, const int numAnd, const int n
         }
 
         auto typeStr = (type == LEAF) ? "LEAF" : (type == OR) ? "OR" : "AND";
-        if (verbose) {
+        if (verbosity > 1) {
             std::cout << "Generated node: {id = " << i << ", type = " << typeStr << "}" << std::endl;
         }
 
-        const auto node = new Node(i, type, desc, iCap, oCap);
+        const auto node = new GraphNode(i, type, desc, iCap, oCap);
         node->addPred(node);
         graph->addNode(node);
     }
 
-    // Calculate the portion of each
-    int andTotalOCap;
-    const int orTotalOCap = (numOr - 1) * numAnd;
-    if (relaxed) {
-        andTotalOCap = numAnd * numOr;
-    } else {
-        andTotalOCap = numAnd;
+    // Create the permutation of all possible edges
+    std::list<Edge> allEdges;
+    for (int src = 2; src <= total; src++) {
+        if (graph->getNode(src)->getType() == AND) {
+            for (int dst = 1; dst <= numOr; dst++) {
+                allEdges.push_front(Edge(graph->getNode(src), graph->getNode(dst)));
+            }
+        } else {
+            for (int dst = numOr + numLeaf + 1; dst <= total; dst++) {
+                allEdges.push_front(Edge(graph->getNode(src), graph->getNode(dst)));
+            }
+        }
     }
-    int leafTotalOCap = numLeaf * numAnd;
-    int totalOCap = orTotalOCap + andTotalOCap + leafTotalOCap;
+
+    if (verbosity > 2) {
+        for (auto &edge: allEdges) {
+            std::cout << "(" << edge.src << ", " << edge.dst << ")" << std::endl;
+        }
+    }
 
     while (numEdge > 0) {
-        auto randNum = Random::get(1, totalOCap);
-        int srcNodeNum;
-        if (randNum <= orTotalOCap)
-            // Skip index 0 and the goal node
-            srcNodeNum = Random::get(2, numOr);
-        else if (randNum > orTotalOCap && randNum <= orTotalOCap + leafTotalOCap)
-            srcNodeNum = Random::get(leafPadding, numOr + numAnd);
-        else
-            srcNodeNum = Random::get(andPadding, total);
-        Node *src = graph->getNode(srcNodeNum);
-        if (src->getOCap() == 0)
-            continue;
+        // Randomly choose one from the permutations
+        int chosen = Random::get(0, int(allEdges.size() - 1));
+        auto it = allEdges.begin();
+        std::advance(it, chosen);
 
-        Node* dst = graph->getNode(src->getType() == AND ?
-                Random::get(1, numOr) : Random::get(andPadding, total));
-
-        if (dst->getICap() == 0) {
-            continue;
+        if (verbosity > 1) {
+            std::cout << "Chosen index id: " << chosen
+                      << ", corresponding edge: (" << it->src << ", " << it->dst << ")";
         }
 
-        if (addEdge(src, dst, cycleOk)) {
+        if (addEdge(it->src, it->dst, cycleOk)) {
             numEdge -= 1;
+
+            // Delete the added edge from the list of all edges
+            if (!relaxed && it->src->getType() == AND) {
+                // Delete all edges that starts from this node, as only one can exist
+                allEdges.remove_if([&it](Edge e) { return e.src == it->src; });
+            } else {
+                allEdges.remove_if([&it](Edge e) { return e.src == it->src && e.dst == it->dst; });
+            }
         }
     }
     return graph;

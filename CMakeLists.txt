@@ -4,7 +4,7 @@ project(AttackGraphGenerator)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(AttackGraphGenerator src/main.cpp
-        src/graph/Node.hpp
+        src/graph/GraphNode.hpp
         src/graph/AttackGraph.hpp
         src/Generation.hpp
         src/io/GraphToCsv.hpp
