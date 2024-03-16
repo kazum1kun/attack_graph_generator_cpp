@@ -5,6 +5,7 @@
 #include "CsvToPdf.hpp"
 
 int verbosity = 0;
+bool manualStepping = false;
 
 int main(int argc, char *argv[]) {
     // Program argument parser
@@ -59,7 +60,10 @@ int main(int argc, char *argv[]) {
             .action([&](const auto &) { ++verbosity; })
             .nargs(0)
             .flag();
-
+    program.add_argument("--manual")
+            .help("manual stepping")
+            .nargs(0)
+            .flag();
     try {
         program.parse_args(argc, argv);
     }
@@ -79,6 +83,7 @@ int main(int argc, char *argv[]) {
     auto vertSed = program.get<std::string>("-vs");
     auto arcSed = program.get<std::string>("-as");
     auto randW = program.get<bool>("-r");
+    manualStepping = program.get<bool>("--manual");
 
     int numOr = nodes[0];
     int numLeaf = nodes[1];

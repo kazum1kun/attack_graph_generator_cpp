@@ -4,7 +4,8 @@
 #include "AttackGraph.hpp"
 #include <string>
 #include <queue>
-#include <list>
+#include <forward_list>
+#include <ranges>
 #include "effolkronium/random.hpp"
 
 extern int verbosity;
@@ -124,8 +125,11 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     }
 
     if (verbosity > 2) {
+        std::cout << "All edges in the linked list: \n";
+        int index = 0;
         for (auto &edge: allEdges) {
-            std::cout << "(" << edge.src << ", " << edge.dst << ")" << std::endl;
+            std::cout << "index: " << index << "(" << edge.src << ", " << edge.dst << ") " << std::endl;
+            index += 1;
         }
     }
 
@@ -146,8 +150,23 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             // Delete the added edge from the list of all edges
             if (!relaxed && it->src->getType() == AND) {
                 // Delete all edges that starts from this node, as only one can exist
+                if (verbosity > 1) {
+                    auto removed = allEdges | std::views::filter([&it](Edge e) {
+                        return e.src == it->src; });
+                    for (auto &edge: removed) {
+                        std::cout << "removing edge: (" << edge.src << ", " << edge.dst << ")" << std::endl;
+                    }
+                }
                 allEdges.remove_if([&it](Edge e) { return e.src == it->src; });
+
             } else {
+                if (verbosity > 1) {
+                    auto removed = allEdges | std::views::filter([&it](Edge e) {
+                        return e.src == it->src && e.dst == it->dst; });
+                    for (auto &edge: removed) {
+                        std::cout << "removing edge: (" << edge.src << ", " << edge.dst << ")" << std::endl;
+                    }
+                }
                 allEdges.remove_if([&it](Edge e) { return e.src == it->src && e.dst == it->dst; });
             }
         }
