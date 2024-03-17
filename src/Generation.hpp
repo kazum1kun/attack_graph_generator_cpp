@@ -9,6 +9,7 @@
 #include "effolkronium/random.hpp"
 
 extern int verbosity;
+extern bool manualStepping;
 
 inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
     if (verbosity > 1) {
@@ -110,6 +111,15 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         graph->addNode(node);
     }
 
+    if (verbosity > 0) {
+        std::cout << "Node generation complete." << std::endl;
+    }
+
+    if (manualStepping) {
+        std:: cout << "\nr>";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
     // Create the permutation of all possible edges
     std::list<Edge> allEdges;
     for (int src = 2; src <= total; src++) {
@@ -133,6 +143,11 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
     }
 
+    if (manualStepping) {
+        std:: cout << "\nr>";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
     while (numEdge > 0) {
         // Randomly choose one from the permutations
         int chosen = Random::get(0, int(allEdges.size() - 1));
@@ -142,6 +157,11 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         if (verbosity > 1) {
             std::cout << "Chosen index id: " << chosen
                       << ", corresponding edge: (" << it->src << ", " << it->dst << ")";
+        }
+
+        if (manualStepping) {
+            std:: cout << "\nr>";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
         if (addEdge(it->src, it->dst, cycleOk)) {
@@ -169,6 +189,25 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                 }
                 allEdges.remove_if([&it](Edge e) { return e.src == it->src && e.dst == it->dst; });
             }
+        }
+
+        if (manualStepping) {
+            std:: cout << "\nr>";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+
+        if (verbosity > 2) {
+            std::cout << "Edges in the linked list after the removal: \n";
+            int index = 0;
+            for (auto &edge: allEdges) {
+                std::cout << "index: " << index << "(" << edge.src << ", " << edge.dst << ") " << std::endl;
+                index += 1;
+            }
+        }
+
+        if (manualStepping) {
+            std:: cout << "\nr>";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }
     return graph;
