@@ -65,6 +65,10 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     const int total = numOr + numAnd + numLeaf;
     using Random = effolkronium::random_static;
 
+    if (verbosity > 0) {
+        std::cout << "Starting node generation." << std::endl;
+    }
+
     Random::seed(seed);
     // Initialize a graph
     auto *graph = new AttackGraph(1, total, numEdge);
@@ -103,7 +107,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         auto typeStr = (type == LEAF) ? "LEAF" : (type == OR) ? "OR" : "AND";
         if (verbosity > 1) {
-            std::cout << "Generated node: {id = " << i << ", type = " << typeStr << "}" << std::endl;
+            std::cout << "Generated node: {id = " << i << ", type = " << typeStr << ", name = " << desc << "}" << std::endl;
         }
 
         const auto node = new GraphNode(i, type, desc, iCap, oCap);
@@ -138,7 +142,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cout << "All edges in the linked list: \n";
         int index = 0;
         for (auto &edge: allEdges) {
-            std::cout << "index: " << index << "(" << edge.src << ", " << edge.dst << ") " << std::endl;
+            std::cout << "index: " << index << " (" << edge.src->getId() << ", " << edge.dst->getId() << ") " << std::endl;
             index += 1;
         }
     }
@@ -148,7 +152,15 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
+    if (verbosity > 0) {
+        std::cout << "Starting edge generation.";
+    }
+
     while (numEdge > 0) {
+        if (verbosity > 1) {
+            std::cout << "Number of edge to generate: " << numEdge << std::endl;
+        }
+
         // Randomly choose one from the permutations
         int chosen = Random::get(0, int(allEdges.size() - 1));
         auto it = allEdges.begin();
@@ -156,7 +168,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         if (verbosity > 1) {
             std::cout << "Chosen index id: " << chosen
-                      << ", corresponding edge: (" << it->src << ", " << it->dst << ")";
+                      << ", corresponding edge: (" << it->src->getId() << ", " << it->dst->getId() << ")";
         }
 
         if (manualStepping) {
@@ -174,7 +186,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                     auto removed = allEdges | std::views::filter([&it](Edge e) {
                         return e.src == it->src; });
                     for (auto &edge: removed) {
-                        std::cout << "removing edge: (" << edge.src << ", " << edge.dst << ")" << std::endl;
+                        std::cout << "removing edge: (" << edge.src->getId() << ", " << edge.dst->getId() << ")" << std::endl;
                     }
                 }
                 allEdges.remove_if([&it](Edge e) { return e.src == it->src; });
@@ -184,7 +196,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                     auto removed = allEdges | std::views::filter([&it](Edge e) {
                         return e.src == it->src && e.dst == it->dst; });
                     for (auto &edge: removed) {
-                        std::cout << "removing edge: (" << edge.src << ", " << edge.dst << ")" << std::endl;
+                        std::cout << "removing edge: (" << edge.src->getId() << ", " << edge.dst->getId() << ")" << std::endl;
                     }
                 }
                 allEdges.remove_if([&it](Edge e) { return e.src == it->src && e.dst == it->dst; });
@@ -200,7 +212,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "Edges in the linked list after the removal: \n";
             int index = 0;
             for (auto &edge: allEdges) {
-                std::cout << "index: " << index << "(" << edge.src << ", " << edge.dst << ") " << std::endl;
+                std::cout << "index: " << index << " (" << edge.src->getId() << ", " << edge.dst->getId() << ") " << std::endl;
                 index += 1;
             }
         }

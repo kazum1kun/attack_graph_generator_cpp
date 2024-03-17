@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
     program.add_argument("-v", "--verbose")
             .help("more verbose output")
             .action([&](const auto &) { ++verbosity; })
+            .append()
             .nargs(0)
             .flag();
     program.add_argument("--manual")
@@ -122,7 +123,7 @@ int main(int argc, char *argv[]) {
                                                                                       "  acrdSed: " << arcSed << "\n"
                                                                                                                  "  randW: "
                   << randW << "\n"
-                              "  verbosity: " << verbosity << "\n";
+                              "  verbosity: " << verbosity << "\n" << std::endl;
     }
 
     auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
