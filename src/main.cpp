@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
             .flag();
     program.add_argument("-s", "--seed")
             .help("random seed")
-            .scan<'i', int>()
+            .scan<'i', unsigned long>()
             .default_value(static_cast<unsigned long>(std::time(nullptr)));
     program.add_argument("-o", "--outdir")
             .help("output directory")
