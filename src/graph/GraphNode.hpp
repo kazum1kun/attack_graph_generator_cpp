@@ -17,8 +17,8 @@ struct Edge;
 
 class GraphNode {
     int id;
-    int iCap;
-    int oCap;
+    int inDegree;
+    int outDegree;
     std::string desc;
     NodeType type;
     std::unordered_set<GraphNode *> predecessor;
@@ -49,15 +49,15 @@ public:
 
     bool adjContains(GraphNode *node) const;
 
-    void decICap();
+    void incInDegree();
 
-    void decOCap();
+    void incOutDegree();
+
+    int getInDegree();
+
+    int getOutDegree();
 
     int getId() const;
-
-    int getICap() const;
-
-    int getOCap() const;
 
     std::string getDesc() const;
 
@@ -76,8 +76,6 @@ inline GraphNode::GraphNode(const int id, const NodeType type, std::string desc,
     this->id = id;
     this->type = type;
     this->desc = std::move(desc);
-    this->iCap = iCap;
-    this->oCap = oCap;
 
     this->predecessor = std::unordered_set<GraphNode *>{};
     this->adjacentNodes = std::unordered_set<GraphNode *>{};
@@ -100,14 +98,6 @@ inline void GraphNode::addAdj(GraphNode *node) {
     this->adjacentNodes.insert(node);
 }
 
-inline void GraphNode::decICap() {
-    this->iCap--;
-}
-
-inline void GraphNode::decOCap() {
-    this->oCap--;
-}
-
 inline int GraphNode::getId() const {
     return this->id;
 }
@@ -126,14 +116,6 @@ inline std::unordered_set<GraphNode *> *GraphNode::getAdj() {
 
 inline bool GraphNode::adjContains(GraphNode *node) const {
     return this->adjacentNodes.contains(node);
-}
-
-inline int GraphNode::getOCap() const {
-    return this->oCap;
-}
-
-inline int GraphNode::getICap() const {
-    return this->iCap;
 }
 
 inline bool GraphNode::predContains(std::unordered_set<GraphNode *> *otherSet) const {
@@ -175,6 +157,22 @@ std::list<Edge>::iterator GraphNode::getEdgePointer(GraphNode *dst) {
 
 std::unordered_map<GraphNode *, std::list<Edge>::iterator> GraphNode::getAllEdgePointers() {
     return this->edgePointerMap;
+}
+
+void GraphNode::incInDegree() {
+    this->inDegree += 1;
+}
+
+void GraphNode::incOutDegree() {
+    this->outDegree += 1;
+}
+
+int GraphNode::getInDegree() {
+    return this->inDegree;
+}
+
+int GraphNode::getOutDegree() {
+    return this->outDegree;
 }
 
 

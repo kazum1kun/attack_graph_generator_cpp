@@ -11,6 +11,10 @@
 extern int verbosity;
 extern bool manualStepping;
 
+bool causesCycles(GraphNode *src, GraphNode *dst, AttackGraph *graph) {
+
+}
+
 inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
     if (verbosity > 1) {
         std::cout << "Attempting to add edge from " << src->getId() << " to " << dst->getId();
