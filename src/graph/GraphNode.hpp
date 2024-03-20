@@ -3,13 +3,17 @@
 
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 #include <utility>
+#include "AttackGraph.hpp"
 
 enum NodeType {
     LEAF = 0,
     AND = 1,
     OR = 2
 };
+
+struct Edge;
 
 class GraphNode {
     int id;
@@ -19,6 +23,7 @@ class GraphNode {
     NodeType type;
     std::unordered_set<GraphNode *> predecessor;
     std::unordered_set<GraphNode *> adjacentNodes;
+    std::unordered_map<GraphNode *, std::list<Edge>::iterator> edgePointerMap;
 public:
     GraphNode(int id, NodeType type, std::string desc, int iCap, int oCap);
 
@@ -29,6 +34,16 @@ public:
     void addPred(std::unordered_set<GraphNode *> *predSet);
 
     void addAdj(GraphNode *node);
+
+    void addEdgePointer(GraphNode *dst, std::list<Edge>::iterator it);
+
+    void removeEdgePointer(GraphNode *dst);
+
+    std::list<Edge>::iterator getEdgePointer(GraphNode *dst);
+
+    std::unordered_map<GraphNode *, std::list<Edge>::iterator> getAllEdgePointers();
+
+    void clearEdgePointers();
 
     bool predContains(std::unordered_set<GraphNode *> *otherSet) const;
 
@@ -51,6 +66,10 @@ public:
     std::unordered_set<GraphNode *> *getPred();
 
     std::unordered_set<GraphNode *> *getAdj();
+
+    bool operator==(GraphNode const & other) const;
+
+    bool operator!=(GraphNode const & other) const;
 };
 
 inline GraphNode::GraphNode(const int id, const NodeType type, std::string desc, const int iCap, const int oCap) {
@@ -62,6 +81,7 @@ inline GraphNode::GraphNode(const int id, const NodeType type, std::string desc,
 
     this->predecessor = std::unordered_set<GraphNode *>{};
     this->adjacentNodes = std::unordered_set<GraphNode *>{};
+    this->edgePointerMap = std::unordered_map<GraphNode *, std::list<Edge>::iterator>{};
 }
 
 inline GraphNode::~GraphNode() = default;
@@ -128,6 +148,35 @@ inline bool GraphNode::predContains(std::unordered_set<GraphNode *> *otherSet) c
 std::string GraphNode::getDesc() const {
     return this->desc;
 }
+
+bool GraphNode::operator==(const GraphNode &other) const {
+    return this->id == other.id;
+}
+
+bool GraphNode::operator!=(const GraphNode &other) const {
+    return !(*this == other);
+}
+
+void GraphNode::addEdgePointer(GraphNode *dst, std::list<Edge>::iterator it) {
+    this->edgePointerMap.insert({dst, it});
+}
+
+void GraphNode::removeEdgePointer(GraphNode *dst) {
+    this->edgePointerMap.erase(dst);
+}
+
+void GraphNode::clearEdgePointers() {
+    this->edgePointerMap.clear();
+}
+
+std::list<Edge>::iterator GraphNode::getEdgePointer(GraphNode *dst) {
+    return edgePointerMap[dst];
+}
+
+std::unordered_map<GraphNode *, std::list<Edge>::iterator> GraphNode::getAllEdgePointers() {
+    return this->edgePointerMap;
+}
+
 
 struct Edge {
     GraphNode *src;

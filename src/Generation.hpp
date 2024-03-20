@@ -4,7 +4,7 @@
 #include "AttackGraph.hpp"
 #include <string>
 #include <queue>
-#include <forward_list>
+#include <list>
 #include <ranges>
 #include "effolkronium/random.hpp"
 
@@ -130,11 +130,16 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     for (int src = 2; src <= total; src++) {
         if (graph->getNode(src)->getType() == AND) {
             for (int dst = 1; dst <= numOr; dst++) {
-                allEdges.push_front(Edge(graph->getNode(src), graph->getNode(dst)));
+                auto it = allEdges.insert(allEdges.end(),
+                                          Edge(graph->getNode(src), graph->getNode(dst)));
+                // Save the pointer to this newly inserted edge
+                graph->getNode(src)->addEdgePointer(graph->getNode(dst), it);
             }
         } else {
             for (int dst = numOr + numLeaf + 1; dst <= total; dst++) {
-                allEdges.push_front(Edge(graph->getNode(src), graph->getNode(dst)));
+                auto it = allEdges.insert(allEdges.end(),
+                                          Edge(graph->getNode(src), graph->getNode(dst)));
+                graph->getNode(src)->addEdgePointer(graph->getNode(dst), it);
             }
         }
     }
@@ -159,13 +164,18 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     // Generate an edge from an AND node to the goal node if alt mode is on
     if (alt) {
-        auto src = Random::get(numOr + numLeaf + 1, total);
-        addEdge(graph->getNode(src), graph->getNode(1), cycleOk);
+        auto src = graph->getNode(Random::get(numOr + numLeaf + 1, total));
+        auto dst = graph->getNode(graph->getGoalId());
+        addEdge(src, dst, cycleOk);
 
         if (relaxed) {
-            allEdges.remove_if([&](Edge e) { return e.src->getId() == src && e.dst->getId() == 1; });
+            allEdges.erase(src->getEdgePointer(dst));
+            src->removeEdgePointer(dst);
         } else {
-            allEdges.remove_if([&](Edge e) { return e.src->getId() == src; });
+            for (auto edge: std::views::values(src->getAllEdgePointers())) {
+                allEdges.erase(edge);
+            }
+            src->clearEdgePointers();
         }
 
         numEdge -= 1;
@@ -208,23 +218,23 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             if (!relaxed && it->src->getType() == AND) {
                 // Delete all edges that starts from this node, as only one can exist
                 if (verbosity > 1) {
-                    auto removed = allEdges | std::views::filter([&it](Edge e) {
-                        return e.src == it->src; });
-                    for (auto &edge: removed) {
-                        std::cout << "removing edge: (" << edge.src->getId() << ", " << edge.dst->getId() << ")" << std::endl;
+                    for (auto edge: std::views::values(it->src->getAllEdgePointers())) {
+                        std::cout << "removing edge: (" << edge->src->getId() << ", "
+                                  << edge->dst->getId() << ")" << std::endl;
                     }
                 }
-                allEdges.remove_if([&it](Edge e) { return e.src == it->src; });
 
+                for (auto edge: std::views::values(it->src->getAllEdgePointers())) {
+                    allEdges.erase(edge);
+                }
+                it->src->clearEdgePointers();
             } else {
                 if (verbosity > 1) {
-                    auto removed = allEdges | std::views::filter([&it](Edge e) {
-                        return e.src == it->src && e.dst == it->dst; });
-                    for (auto &edge: removed) {
-                        std::cout << "removing edge: (" << edge.src->getId() << ", " << edge.dst->getId() << ")" << std::endl;
-                    }
+                    auto removed = it->src->getEdgePointer(it->dst);
+                    std::cout << "removing edge: (" << removed->src->getId() << ", " << removed->dst->getId() << ")" << std::endl;
                 }
-                allEdges.remove_if([&it](Edge e) { return e.src == it->src && e.dst == it->dst; });
+                allEdges.erase(it->src->getEdgePointer(it->dst));
+                it->src->removeEdgePointer(it->dst);
             }
         }
 

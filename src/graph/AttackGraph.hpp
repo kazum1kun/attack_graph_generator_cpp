@@ -20,7 +20,7 @@ public:
 
     [[nodiscard]] GraphNode *getNode(int index) const;
 
-    [[nodiscard]] int getGoal() const;
+    [[nodiscard]] int getGoalId() const;
 
     [[nodiscard]] int getSize() const;
 
@@ -48,7 +48,7 @@ inline GraphNode *AttackGraph::getNode(const int index) const {
     return this->nodes[index];
 }
 
-inline int AttackGraph::getGoal() const {
+inline int AttackGraph::getGoalId() const {
     return this->goal;
 }
 
