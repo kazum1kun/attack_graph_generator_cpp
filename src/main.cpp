@@ -55,6 +55,10 @@ int main(int argc, char *argv[]) {
             .help("add random weights to the edges")
             .nargs(0)
             .flag();
+    program.add_argument("--alt")
+            .help("alternative generation strategy that guarantees an edge into the goal node")
+            .nargs(0)
+            .flag();
     program.add_argument("-v", "--verbose")
             .help("more verbose output")
             .action([&](const auto &) { ++verbosity; })
@@ -84,6 +88,7 @@ int main(int argc, char *argv[]) {
     auto vertSed = program.get<std::string>("-vs");
     auto arcSed = program.get<std::string>("-as");
     auto randW = program.get<bool>("-r");
+    auto alt = program.get<bool>("--alt");
     manualStepping = program.get<bool>("--manual");
 
     int numOr = nodes[0];
@@ -126,7 +131,7 @@ int main(int argc, char *argv[]) {
                               "  verbosity: " << verbosity << "\n" << std::endl;
     }
 
-    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
+    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, seed);
 
     if (verbosity > 0) {
         std::cout << "Graph generated, saving it to files." << std::endl;

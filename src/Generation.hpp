@@ -61,7 +61,8 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
 }
 
 inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int numLeaf,
-                                  int numEdge, const bool cycleOk, const bool relaxed, const unsigned long seed) {
+                                  int numEdge, const bool cycleOk, const bool relaxed, const bool alt,
+                                  const unsigned long seed) {
     const int total = numOr + numAnd + numLeaf;
     using Random = effolkronium::random_static;
 
@@ -155,6 +156,30 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     if (verbosity > 0) {
         std::cout << "Starting edge generation." << std::endl;
     }
+
+    // Generate an edge from an AND node to the goal node if alt mode is on
+    if (alt) {
+        auto src = Random::get(numOr + numLeaf + 1, total);
+        addEdge(graph->getNode(src), graph->getNode(1), cycleOk);
+
+        if (relaxed) {
+            allEdges.remove_if([&](Edge e) { return e.src->getId() == src && e.dst->getId() == 1; });
+        } else {
+            allEdges.remove_if([&](Edge e) { return e.src->getId() == src; });
+        }
+
+        numEdge -= 1;
+
+        if (verbosity > 1) {
+            std::cout << "Alt: generated an edge from" << src << "to 1." << std::endl;
+        }
+
+        if (manualStepping) {
+            std:: cout << "\nr>";
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+    }
+
 
     while (numEdge > 0) {
         if (verbosity > 1) {
