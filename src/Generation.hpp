@@ -153,7 +153,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     }
 
     if (verbosity > 0) {
-        std::cout << "Starting edge generation.";
+        std::cout << "Starting edge generation." << std::endl;
     }
 
     while (numEdge > 0) {

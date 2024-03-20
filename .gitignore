@@ -34,3 +34,4 @@
 # CMake temp files
 cmake-build-debug\
 cmake-build-debug*\
+build\

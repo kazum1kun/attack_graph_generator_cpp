@@ -129,13 +129,13 @@ int main(int argc, char *argv[]) {
     auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, seed);
 
     if (verbosity > 0) {
-        std::cout << "Graph generated, saving it to files.";
+        std::cout << "Graph generated, saving it to files." << std::endl;
     }
     graphToCsv(graph, outDir, randW);
 
     if (drawGraph) {
         if (verbosity > 0) {
-            std::cout << "Converting graph CSV to pdf file.";
+            std::cout << "Converting graph CSV to pdf file." << std::endl;
         }
         csvToPdf(outDir, arcSed, vertSed);
     }
