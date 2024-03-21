@@ -3,7 +3,7 @@
 
 #include <string>
 #include <unordered_set>
-#include <unordered_map>
+#include <list>
 #include <utility>
 #include "AttackGraph.hpp"
 
@@ -19,162 +19,140 @@ class GraphNode {
     int id;
     int inDegree;
     int outDegree;
+    int availableAdj;
     std::string desc;
     NodeType type;
     std::unordered_set<GraphNode *> predecessor;
-    std::unordered_set<GraphNode *> adjacentNodes;
-    std::unordered_map<GraphNode *, std::list<Edge>::iterator> edgePointerMap;
+    std::list<GraphNode *> adjNodes;
+    std::list<GraphNode *> possibleAdjNodes;
 public:
-    GraphNode(int id, NodeType type, std::string desc, int iCap, int oCap);
+    GraphNode(int id, NodeType type, std::string desc) {
+        this -> id = id;
+        this -> type = type;
+        this -> desc = std::move(desc);
+        inDegree = 0;
+        outDegree = 0;
+        availableAdj = 0;
 
-    ~GraphNode();
-
-    void addPred(GraphNode *node);
-
-    void addPred(std::unordered_set<GraphNode *> *predSet);
-
-    void addAdj(GraphNode *node);
-
-    void addEdgePointer(GraphNode *dst, std::list<Edge>::iterator it);
-
-    void removeEdgePointer(GraphNode *dst);
-
-    std::list<Edge>::iterator getEdgePointer(GraphNode *dst);
-
-    std::unordered_map<GraphNode *, std::list<Edge>::iterator> getAllEdgePointers();
-
-    void clearEdgePointers();
-
-    bool predContains(std::unordered_set<GraphNode *> *otherSet) const;
-
-    bool adjContains(GraphNode *node) const;
-
-    void incInDegree();
-
-    void incOutDegree();
-
-    int getInDegree();
-
-    int getOutDegree();
-
-    int getId() const;
-
-    std::string getDesc() const;
-
-    NodeType getType() const;
-
-    std::unordered_set<GraphNode *> *getPred();
-
-    std::unordered_set<GraphNode *> *getAdj();
-
-    bool operator==(GraphNode const & other) const;
-
-    bool operator!=(GraphNode const & other) const;
-};
-
-inline GraphNode::GraphNode(const int id, const NodeType type, std::string desc, const int iCap, const int oCap) {
-    this->id = id;
-    this->type = type;
-    this->desc = std::move(desc);
-
-    this->predecessor = std::unordered_set<GraphNode *>{};
-    this->adjacentNodes = std::unordered_set<GraphNode *>{};
-    this->edgePointerMap = std::unordered_map<GraphNode *, std::list<Edge>::iterator>{};
-}
-
-inline GraphNode::~GraphNode() = default;
-
-inline void GraphNode::addPred(GraphNode *node) {
-    this->predecessor.insert(node);
-}
-
-inline void GraphNode::addPred(std::unordered_set<GraphNode *> *predSet) {
-    for (auto pred: *predSet) {
-        this->addPred(pred);
+        predecessor = std::unordered_set<GraphNode *>{};
+        adjNodes = std::list<GraphNode *>{};
+        possibleAdjNodes = std::list<GraphNode *>{};
     }
-}
 
-inline void GraphNode::addAdj(GraphNode *node) {
-    this->adjacentNodes.insert(node);
-}
+    ~GraphNode() = default;
 
-inline int GraphNode::getId() const {
-    return this->id;
-}
+    void addPred(GraphNode *pred) {
+        predecessor.insert(pred);
+    }
 
-inline NodeType GraphNode::getType() const {
-    return this->type;
-}
-
-inline std::unordered_set<GraphNode *> *GraphNode::getPred() {
-    return &this->predecessor;
-}
-
-inline std::unordered_set<GraphNode *> *GraphNode::getAdj() {
-    return &this->adjacentNodes;
-}
-
-inline bool GraphNode::adjContains(GraphNode *node) const {
-    return this->adjacentNodes.contains(node);
-}
-
-inline bool GraphNode::predContains(std::unordered_set<GraphNode *> *otherSet) const {
-    for (const auto &elem: *otherSet) {
-        if (!this->predecessor.contains(elem)) {
-            return false;
+    void addPred(std::unordered_set<GraphNode *> *predSet) {
+        for (auto pred: *predSet) {
+            addPred(pred);
         }
     }
-    return true;
-}
 
-std::string GraphNode::getDesc() const {
-    return this->desc;
-}
+    void addPossibleAdj(GraphNode *dst) {
+        possibleAdjNodes.insert(possibleAdjNodes.end(), dst);
+        availableAdj += 1;
+    }
 
-bool GraphNode::operator==(const GraphNode &other) const {
-    return this->id == other.id;
-}
+    void removePossibleAdj(GraphNode *dst) {
+        possibleAdjNodes.remove(dst);
+        availableAdj -= 1;
+    }
 
-bool GraphNode::operator!=(const GraphNode &other) const {
-    return !(*this == other);
-}
+    std::list<GraphNode *>::const_iterator queryPossibleAdj(int index) {
+        return std::next(possibleAdjNodes.cbegin(), index);
+    }
 
-void GraphNode::addEdgePointer(GraphNode *dst, std::list<Edge>::iterator it) {
-    this->edgePointerMap.insert({dst, it});
-}
+    std::list<GraphNode *>::const_iterator queryPossibleAdjRev(int index) {
+        return std::next(possibleAdjNodes.cend(), -index);
+    }
 
-void GraphNode::removeEdgePointer(GraphNode *dst) {
-    this->edgePointerMap.erase(dst);
-}
+    bool adjContains(GraphNode * query) {
+        auto result = std::find(adjNodes.begin(), adjNodes.end(),query);
+        return result != adjNodes.end();
+    }
 
-void GraphNode::clearEdgePointers() {
-    this->edgePointerMap.clear();
-}
+    void erasePossibleAdj(std::list<GraphNode *>::const_iterator it) {
+        possibleAdjNodes.erase(it);
+    }
 
-std::list<Edge>::iterator GraphNode::getEdgePointer(GraphNode *dst) {
-    return edgePointerMap[dst];
-}
+    std::list<GraphNode *> getPossibleAdj() {
+        return possibleAdjNodes;
+    };
 
-std::unordered_map<GraphNode *, std::list<Edge>::iterator> GraphNode::getAllEdgePointers() {
-    return this->edgePointerMap;
-}
+    void clearPossibleAdj() {
+        possibleAdjNodes.clear();
+        availableAdj = 0;
+    }
 
-void GraphNode::incInDegree() {
-    this->inDegree += 1;
-}
+    // Do the following
+    // 1. Insert the node to the end of the adjacency list
+    // 2. Increment the out-degree of the node
+    // The main program loop will handle the possibleAdj as it's more efficient to do it there
+    void addAdj(GraphNode *node) {
+        adjNodes.insert(possibleAdjNodes.end(), node);
+        outDegree += 1;
+    }
 
-void GraphNode::incOutDegree() {
-    this->outDegree += 1;
-}
+    bool predContains(std::unordered_set<GraphNode *> *otherSet) const {
+        for (const auto &elem: *otherSet) {
+            if (!predecessor.contains(elem)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-int GraphNode::getInDegree() {
-    return this->inDegree;
-}
+    std::list<GraphNode *> getAdj() {
+        return adjNodes;
+    }
 
-int GraphNode::getOutDegree() {
-    return this->outDegree;
-}
+    int getAvailNum() const {
+        return availableAdj;
+    }
 
+    void incInDegree() {
+        inDegree += 1;
+    }
+
+    void incOutDegree() {
+        outDegree += 1;
+    }
+
+    int getInDegree() const {
+        return inDegree;
+    }
+
+    int getOutDegree() const {
+        return outDegree;
+    }
+
+    int getId() const {
+        return id;
+    }
+
+    std::string getDesc() const {
+        return desc;
+    }
+
+    NodeType getType() const {
+        return type;
+    }
+
+    std::unordered_set<GraphNode *> *getPred() {
+        return &predecessor;
+    }
+
+    bool operator==(GraphNode const & other) const {
+        return id == other.id;
+    }
+
+    bool operator!=(GraphNode const & other) const {
+        return !(*this == other);
+    }
+};
 
 struct Edge {
     GraphNode *src;

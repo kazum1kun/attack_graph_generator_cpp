@@ -11,6 +11,16 @@
 extern int verbosity;
 extern bool manualStepping;
 
+
+struct PqNode {
+    int weight;
+    GraphNode *node;
+    bool operator<(const PqNode& other) const {
+        return weight < other.weight;
+    }
+};
+
+// Check if adding an edge from src to dst will cause a cycle
 bool causesCycles(GraphNode *src, GraphNode *dst, AttackGraph *graph) {
 
 }
@@ -20,6 +30,7 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
         std::cout << "Attempting to add edge from " << src->getId() << " to " << dst->getId();
     }
     // Check for cycles (a cycle is found when the dst predecessors are a subset of src predecessor)
+    // TODO: finish the "real" cycle detection algorithm
     if (!cycleOk && src->predContains(dst->getPred())) {
         if (verbosity > 1) {
             std::cout << "...failed: will form a cycle" << std::endl;
@@ -51,15 +62,15 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
         while (!q.empty()) {
             auto node = q.front();
             node->addPred(src->getPred());
-            for (auto adj: *node->getAdj()) {
+            for (auto adj: node->getAdj()) {
                 q.push(adj);
             }
             q.pop();
         }
     }
 
-    src->decOCap();
-    dst->decICap();
+    // Out-degree is already incremented at the src node
+    dst->incInDegree();
 
     return true;
 }
@@ -67,7 +78,8 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
 inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int numLeaf,
                                   int numEdge, const bool cycleOk, const bool relaxed, const bool alt,
                                   const unsigned long seed) {
-    const int total = numOr + numAnd + numLeaf;
+    const int totalNode = numOr + numAnd + numLeaf;
+    int totalEdge = 0;
     using Random = effolkronium::random_static;
 
     if (verbosity > 0) {
@@ -76,37 +88,24 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     Random::seed(seed);
     // Initialize a graph
-    auto *graph = new AttackGraph(1, total, numEdge);
+    auto *graph = new AttackGraph(1, totalNode, numEdge);
     // Initialize nodes
-    for (int i = 1; i <= total; i++) {
+    for (int i = 1; i <= totalNode; i++) {
         NodeType type;
-        int iCap, oCap;
         std::string desc;
 
         // Goal node
         if (i == 1) {
             type = OR;
-            iCap = numAnd;
-            oCap = 0;
             desc = "goal";
         } else if (i <= numOr) {
             type = OR;
-            iCap = numAnd;
-            oCap = numOr;
             desc = "d" + std::to_string(i);
         } else if (i <= numOr + numLeaf) {
             type = LEAF;
-            iCap = 0;
-            oCap = numAnd;
             desc = "p" + std::to_string(i - numOr);
         } else {
             type = AND;
-            iCap = numOr + numLeaf;
-            if (relaxed) {
-                oCap = numOr;
-            } else {
-                oCap = 1;
-            }
             desc = "r" + std::to_string(i - numOr - numLeaf);
         }
 
@@ -115,7 +114,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "Generated node: {id = " << i << ", type = " << typeStr << ", name = " << desc << "}" << std::endl;
         }
 
-        const auto node = new GraphNode(i, type, desc, iCap, oCap);
+        const auto node = new GraphNode(i, type, desc);
         node->addPred(node);
         graph->addNode(node);
     }
@@ -129,31 +128,34 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
-    // Create the permutation of all possible edges
-    std::list<Edge> allEdges;
-    for (int src = 2; src <= total; src++) {
-        if (graph->getNode(src)->getType() == AND) {
+
+    if (verbosity > 0) {
+        std::cout << "Generating all possible edges" << std::endl;
+    }
+
+    // Update the possible adjacent nodes at each node
+    for (int srcId = 2; srcId <= totalNode; srcId++) {
+        auto src = graph->getNode(srcId);
+        if (src->getType() == AND) {
             for (int dst = 1; dst <= numOr; dst++) {
-                auto it = allEdges.insert(allEdges.end(),
-                                          Edge(graph->getNode(src), graph->getNode(dst)));
-                // Save the pointer to this newly inserted edge
-                graph->getNode(src)->addEdgePointer(graph->getNode(dst), it);
+                src->addPossibleAdj(graph->getNode(dst));
+                totalEdge += 1;
             }
         } else {
-            for (int dst = numOr + numLeaf + 1; dst <= total; dst++) {
-                auto it = allEdges.insert(allEdges.end(),
-                                          Edge(graph->getNode(src), graph->getNode(dst)));
-                graph->getNode(src)->addEdgePointer(graph->getNode(dst), it);
+            for (int dst = numOr + numLeaf + 1; dst <= totalNode; dst++) {
+                src->addPossibleAdj(graph->getNode(dst));
+                totalEdge += 1;
             }
         }
     }
 
     if (verbosity > 2) {
-        std::cout << "All edges in the linked list: \n";
+        std::cout << "All possible edges: \n";
         int index = 0;
-        for (auto &edge: allEdges) {
-            std::cout << "index: " << index << " (" << edge.src->getId() << ", " << edge.dst->getId() << ") " << std::endl;
-            index += 1;
+        for (int src = 2; src <= totalNode; src++) {
+            for (auto& dst : graph->getNode(src)->getPossibleAdj())
+                std::cout << "index: " << index << " (" << src << ", " << dst->getId() << ") " << std::endl;
+                index += 1;
         }
     }
 
@@ -168,25 +170,33 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     // Generate an edge from an AND node to the goal node if alt mode is on
     if (alt) {
-        auto src = graph->getNode(Random::get(numOr + numLeaf + 1, total));
+        auto src = graph->getNode(Random::get(numOr + numLeaf + 1, totalNode));
         auto dst = graph->getNode(graph->getGoalId());
         addEdge(src, dst, cycleOk);
 
+        if (verbosity > 1) {
+            std::cout << "Alt: generated an edge from" << src << "to " << dst->getId() << std::endl;
+        }
+
         if (relaxed) {
-            allEdges.erase(src->getEdgePointer(dst));
-            src->removeEdgePointer(dst);
-        } else {
-            for (auto edge: std::views::values(src->getAllEdgePointers())) {
-                allEdges.erase(edge);
+            if (verbosity > 1) {
+                std::cout << "Alt: removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
             }
-            src->clearEdgePointers();
+
+            addEdge(src, dst, cycleOk);
+            src->removePossibleAdj(dst);
+        } else {
+            if (verbosity > 1) {
+                for (auto& d : src->getPossibleAdj()) {
+                    std::cout << "Alt: removing edge: (" << src->getId() << ", " << d->getId() << ")" << std::endl;
+                }
+            }
+
+            addEdge(src, dst, cycleOk);
+            src->clearPossibleAdj();
         }
 
         numEdge -= 1;
-
-        if (verbosity > 1) {
-            std::cout << "Alt: generated an edge from" << src << "to 1." << std::endl;
-        }
 
         if (manualStepping) {
             std:: cout << "\nr>";
@@ -194,20 +204,35 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
     }
 
-
     while (numEdge > 0) {
         if (verbosity > 1) {
-            std::cout << "Number of edge to generate: " << numEdge << std::endl;
+            std::cout << "Number of edge remaining: " << numEdge << std::endl;
         }
 
         // Randomly choose one from the permutations
-        int chosen = Random::get(0, int(allEdges.size() - 1));
-        auto it = allEdges.begin();
-        std::advance(it, chosen);
+        int chosen = Random::get(1, totalEdge);
+        int temp = 0;
+        GraphNode *src;
+
+        // Add up available edge number of every node till we run over the chosen index
+        for (int i = 1; i <= totalNode; i++) {
+            src = graph->getNode(i);
+            temp += src->getAvailNum();
+
+            // If we run over the chosen index, we are at the correct src
+            if (temp > chosen) break;
+        }
+
+        // Get the linked list index within the chosen src
+        // The number we obtain is counting from the end *backwards*
+        int innerIdx = temp - chosen;
+
+        auto dstIt = src->queryPossibleAdjRev(innerIdx);
+        auto dst = *dstIt;
 
         if (verbosity > 1) {
             std::cout << "Chosen index id: " << chosen
-                      << ", corresponding edge: (" << it->src->getId() << ", " << it->dst->getId() << ")";
+                      << ", corresponding edge: (" << src->getId() << ", " << dst->getId() << ")";
         }
 
         if (manualStepping) {
@@ -215,31 +240,25 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
-        if (addEdge(it->src, it->dst, cycleOk)) {
-            numEdge -= 1;
-
+        if (addEdge(src, dst, cycleOk)) {
             // Delete the added edge from the list of all edges
-            if (!relaxed && it->src->getType() == AND) {
-                // Delete all edges that starts from this node, as only one can exist
+            if (!relaxed && src->getType() == AND) {
+                // Delete all edges that starts from this src, as only one can exist
                 if (verbosity > 1) {
-                    for (auto edge: std::views::values(it->src->getAllEdgePointers())) {
-                        std::cout << "removing edge: (" << edge->src->getId() << ", "
-                                  << edge->dst->getId() << ")" << std::endl;
+                    for (auto& d : src->getPossibleAdj()) {
+                        std::cout << "removing edge: (" << src->getId() << ", "
+                                  << d->getId() << ")" << std::endl;
                     }
                 }
-
-                for (auto edge: std::views::values(it->src->getAllEdgePointers())) {
-                    allEdges.erase(edge);
-                }
-                it->src->clearEdgePointers();
+                src->clearPossibleAdj();
             } else {
                 if (verbosity > 1) {
-                    auto removed = it->src->getEdgePointer(it->dst);
-                    std::cout << "removing edge: (" << removed->src->getId() << ", " << removed->dst->getId() << ")" << std::endl;
+                    std::cout << "removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
                 }
-                allEdges.erase(it->src->getEdgePointer(it->dst));
-                it->src->removeEdgePointer(it->dst);
+                src->erasePossibleAdj(dstIt);
             }
+            numEdge -= 1;
+            totalEdge -= 1;
         }
 
         if (manualStepping) {
@@ -248,10 +267,11 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         if (verbosity > 2) {
-            std::cout << "Edges in the linked list after the removal: \n";
+            std::cout << "Remaining possible edges: \n";
             int index = 0;
-            for (auto &edge: allEdges) {
-                std::cout << "index: " << index << " (" << edge.src->getId() << ", " << edge.dst->getId() << ") " << std::endl;
+            for (int s = 2; s <= totalNode; s++) {
+                for (auto& d : graph->getNode(s)->getPossibleAdj())
+                    std::cout << "index: " << index << " (" << s << ", " << d->getId() << ") " << std::endl;
                 index += 1;
             }
         }
