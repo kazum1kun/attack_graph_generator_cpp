@@ -165,7 +165,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     }
 
     if (verbosity > 0) {
-        std::cout << "Starting edge generation." << std::endl;
+        std::cout << "Start picking edges" << std::endl;
     }
 
     // Generate an edge from an AND node to the goal node if alt mode is on
@@ -184,6 +184,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             }
 
             addEdge(src, dst, cycleOk);
+            totalEdge -= 1;
             src->removePossibleAdj(dst);
         } else {
             if (verbosity > 1) {
@@ -193,6 +194,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             }
 
             addEdge(src, dst, cycleOk);
+            totalEdge -= src->getAvailNum();
             src->clearPossibleAdj();
         }
 
@@ -220,7 +222,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             temp += src->getAvailNum();
 
             // If we run over the chosen index, we are at the correct src
-            if (temp > chosen) break;
+            if (temp >= chosen) break;
         }
 
         // Get the linked list index within the chosen src
@@ -250,15 +252,16 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                                   << d->getId() << ")" << std::endl;
                     }
                 }
+                totalEdge -= src->getAvailNum();
                 src->clearPossibleAdj();
             } else {
                 if (verbosity > 1) {
                     std::cout << "removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
                 }
+                totalEdge -= 1;
                 src->erasePossibleAdj(dstIt);
             }
             numEdge -= 1;
-            totalEdge -= 1;
         }
 
         if (manualStepping) {

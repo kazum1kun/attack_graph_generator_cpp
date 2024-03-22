@@ -36,7 +36,7 @@ void graphToCsv(AttackGraph *graph, std::string &outDir, bool rndEdgeWeight) {
         vertFile << std::format("{},\"{}\",\"{}\",{}\n", node->getId(), node->getDesc(), type,
                                 node->getType() == LEAF ? 1 : 0);
 
-        for (const auto &adj: *node->getAdj()) {
+        for (const auto &adj: node->getAdj()) {
             double edgeProb = 1.0;
             if (rndEdgeWeight) edgeProb = generateEdgeWeight(graph->getNumEdges());
 

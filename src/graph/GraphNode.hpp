@@ -66,7 +66,7 @@ public:
     }
 
     std::list<GraphNode *>::const_iterator queryPossibleAdjRev(int index) {
-        return std::next(possibleAdjNodes.cend(), -index);
+        return std::next(possibleAdjNodes.cend(), -index-1);
     }
 
     bool adjContains(GraphNode * query) {
@@ -76,6 +76,7 @@ public:
 
     void erasePossibleAdj(std::list<GraphNode *>::const_iterator it) {
         possibleAdjNodes.erase(it);
+        availableAdj -= 1;
     }
 
     std::list<GraphNode *> getPossibleAdj() {
@@ -92,7 +93,7 @@ public:
     // 2. Increment the out-degree of the node
     // The main program loop will handle the possibleAdj as it's more efficient to do it there
     void addAdj(GraphNode *node) {
-        adjNodes.insert(possibleAdjNodes.end(), node);
+        adjNodes.insert(adjNodes.end(), node);
         outDegree += 1;
     }
 
