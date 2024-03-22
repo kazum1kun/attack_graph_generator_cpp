@@ -9,7 +9,10 @@ add_executable(AttackGraphGenerator src/main.cpp
         src/Generation.hpp
         src/io/GraphToCsv.hpp
         src/io/FsUtils.hpp
-        src/io/CsvToPdf.hpp)
+        src/io/CsvToPdf.hpp
+        src/sat/ShortestTrace.hpp
+        src/priority_queue/PriorityQueue.hpp
+        src/priority_queue/PriorityQueue.hpp)
 
 find_package(effolkronium_random REQUIRED)
 find_package(argparse REQUIRED)

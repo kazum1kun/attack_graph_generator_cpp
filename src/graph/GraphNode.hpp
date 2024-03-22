@@ -13,43 +13,43 @@ enum NodeType {
     OR = 2
 };
 
-struct Edge;
+enum NodeColor {
+    WHITE = 0,
+    GRAY = 1,
+    BLACK = 2
+};
 
 class GraphNode {
+private:
     int id;
-    int inDegree;
-    int outDegree;
     int availableAdj;
+    double weight;
     std::string desc;
     NodeType type;
-    std::unordered_set<GraphNode *> predecessor;
+    NodeColor color;
+    GraphNode* parent;
+    int done;
+
     std::list<GraphNode *> adjNodes;
     std::list<GraphNode *> possibleAdjNodes;
+    std::unordered_set<GraphNode *> revAdjNodes;
 public:
     GraphNode(int id, NodeType type, std::string desc) {
         this -> id = id;
         this -> type = type;
         this -> desc = std::move(desc);
-        inDegree = 0;
-        outDegree = 0;
         availableAdj = 0;
-
-        predecessor = std::unordered_set<GraphNode *>{};
-        adjNodes = std::list<GraphNode *>{};
-        possibleAdjNodes = std::list<GraphNode *>{};
+        weight = 0.0;
+        color = WHITE;
+        done = 0;
+        parent = nullptr;
+//
+//        predecessor = std::unordered_set<GraphNode *>{};
+//        adjNodes = std::list<GraphNode *>{};
+//        possibleAdjNodes = std::list<GraphNode *>{};
     }
 
     ~GraphNode() = default;
-
-    void addPred(GraphNode *pred) {
-        predecessor.insert(pred);
-    }
-
-    void addPred(std::unordered_set<GraphNode *> *predSet) {
-        for (auto pred: *predSet) {
-            addPred(pred);
-        }
-    }
 
     void addPossibleAdj(GraphNode *dst) {
         possibleAdjNodes.insert(possibleAdjNodes.end(), dst);
@@ -61,10 +61,12 @@ public:
         availableAdj -= 1;
     }
 
+    // Returns a constant_iterator that needs to be de-referenced before accessing the content it points to
     std::list<GraphNode *>::const_iterator queryPossibleAdj(int index) {
         return std::next(possibleAdjNodes.cbegin(), index);
     }
 
+    // Returns a constant_iterator that needs to be de-referenced before accessing the content it points to
     std::list<GraphNode *>::const_iterator queryPossibleAdjRev(int index) {
         return std::next(possibleAdjNodes.cend(), -index-1);
     }
@@ -88,22 +90,19 @@ public:
         availableAdj = 0;
     }
 
-    // Do the following
-    // 1. Insert the node to the end of the adjacency list
-    // 2. Increment the out-degree of the node
-    // The main program loop will handle the possibleAdj as it's more efficient to do it there
-    void addAdj(GraphNode *node) {
-        adjNodes.insert(adjNodes.end(), node);
-        outDegree += 1;
+    void addAdj(GraphNode *dst) {
+        // Forward edge
+        adjNodes.insert(adjNodes.end(), dst);
+        // Reverse edge (for calculating in-degree of dst other node)
+        dst->addRevAdj(this);
     }
 
-    bool predContains(std::unordered_set<GraphNode *> *otherSet) const {
-        for (const auto &elem: *otherSet) {
-            if (!predecessor.contains(elem)) {
-                return false;
-            }
-        }
-        return true;
+    std::unordered_set<GraphNode *> getRevAdj() {
+        return revAdjNodes;
+    }
+
+    void addRevAdj(GraphNode* src) {
+        revAdjNodes.insert(src);
     }
 
     std::list<GraphNode *> getAdj() {
@@ -114,20 +113,20 @@ public:
         return availableAdj;
     }
 
-    void incInDegree() {
-        inDegree += 1;
+    size_t getInDegree() const {
+        return revAdjNodes.size();
     }
 
-    void incOutDegree() {
-        outDegree += 1;
+    size_t getOutDegree() const {
+        return adjNodes.size();
     }
 
-    int getInDegree() const {
-        return inDegree;
+    void setParent(GraphNode *newParent) {
+        parent = newParent;
     }
 
-    int getOutDegree() const {
-        return outDegree;
+    GraphNode *getParent() {
+        return parent;
     }
 
     int getId() const {
@@ -142,9 +141,31 @@ public:
         return type;
     }
 
-    std::unordered_set<GraphNode *> *getPred() {
-        return &predecessor;
+    double getWeight() const {
+        return weight;
     }
+
+    void setWeight(double newWeight) {
+        weight = newWeight;
+    }
+
+    int getDone() const {
+        return done;
+    }
+
+    void incDone() {
+        done += 1;
+    }
+
+    NodeColor getColor() const {
+        return color;
+    }
+
+    void setColor(NodeColor newColor) {
+        color = newColor;
+    }
+
+
 
     bool operator==(GraphNode const & other) const {
         return id == other.id;
@@ -152,6 +173,10 @@ public:
 
     bool operator!=(GraphNode const & other) const {
         return !(*this == other);
+    }
+
+    bool operator<(GraphNode const & other) const {
+        return weight < other.getWeight();
     }
 };
 
