@@ -185,7 +185,7 @@ public:
     }
 
     bool operator==(GraphNode const &other) const {
-        return id == other.id;
+        return id == other.getId();
     }
 
     bool operator!=(GraphNode const &other) const {

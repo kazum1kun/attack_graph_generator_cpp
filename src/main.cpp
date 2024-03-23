@@ -69,6 +69,10 @@ int main(int argc, char *argv[]) {
             .help("manual stepping")
             .nargs(0)
             .flag();
+    program.add_argument("-t", "--test")
+            .help("test the generated graph if an attack trace exists")
+            .nargs(0)
+            .flag();
     try {
         program.parse_args(argc, argv);
     }
@@ -89,6 +93,7 @@ int main(int argc, char *argv[]) {
     auto arcSed = program.get<std::string>("-as");
     auto randW = program.get<bool>("-r");
     auto alt = program.get<bool>("--alt");
+    auto test = program.get<bool>("-t");
     manualStepping = program.get<bool>("--manual");
 
     int numOr = nodes[0];
@@ -128,10 +133,10 @@ int main(int argc, char *argv[]) {
                                                                                       "  acrdSed: " << arcSed << "\n"
                                                                                                                  "  randW: "
                   << randW << "\n"
-                              "  verbosity: " << verbosity << "\n" << std::endl;
+                              "  verbosity: " << verbosity << "\n" << "  altgen: " << alt << "\n" << "test: " << test << std::endl;
     }
 
-    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, seed);
+    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, test, seed);
 
     if (verbosity > 0) {
         std::cout << "Graph generated, saving it to files." << std::endl;

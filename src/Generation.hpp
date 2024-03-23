@@ -2,6 +2,7 @@
 #define ATTACKGRAPHGENERATOR_GENERATION_HPP
 
 #include "AttackGraph.hpp"
+#include "ShortestTrace.hpp"
 #include <string>
 #include <queue>
 #include <list>
@@ -94,7 +95,7 @@ inline bool addEdge(GraphNode &src, GraphNode &dst, const bool cycleOk, AttackGr
 }
 
 inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int numLeaf,
-                                  int numEdge, const bool cycleOk, const bool relaxed, const bool alt,
+                                  int numEdge, const bool cycleOk, const bool relaxed, const bool alt, bool test,
                                   const unsigned long seed) {
     const int totalNode = numOr + numAnd + numLeaf;
     int totalEdge = 0;
@@ -300,6 +301,18 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         if (manualStepping) {
             std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+
+        if (test) {
+            if (verbosity > 1) {
+                std::cout << "Testing if the generated graph has a feasible solution: ";
+                auto result = Sat(*graph, std::nullopt);
+                if (result != std::nullopt) {
+                    std::cout << "yes" << std::endl;
+                } else {
+                    std::cout << "no" << std::endl;
+                }
+            }
         }
     }
     return graph;
