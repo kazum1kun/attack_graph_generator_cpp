@@ -25,6 +25,7 @@ bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
 
     // Scan the vertexes for leaf nodes
     for (auto &node: graph.getNodes()) {
+        if (node == nullptr) continue;
         auto deg = node->getInDegree();
 
         if (deg == 0) q.push(node);
@@ -51,28 +52,28 @@ bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
     return edgeCount > 0;
 }
 
-inline bool addEdge(GraphNode &src, GraphNode &dst, const bool cycleOk, AttackGraph &graph) {
+inline bool addEdge(GraphNode *src, GraphNode &dst, const bool cycleOk, AttackGraph &graph) {
     if (verbosity > 1) {
-        std::cout << "Attempting to add edge from " << src.getId() << " to " << dst.getId();
+        std::cout << "Attempting to add edge from " << src->getId() << " to " << dst.getId();
     }
     // Check for cycles if cycleOk is false (using Kahn's algorithm)
-    if (!cycleOk && cycleExists(src, dst, graph)) {
+    if (!cycleOk && cycleExists(*src, dst, graph)) {
         return false;
     }
 
-    if (src.adjContains(dst)) {
+    if (src->adjContains(dst)) {
         if (verbosity > 1) {
             std::cout << "...failed: already exists" << std::endl;
         }
         return false;
     }
-    if (src == dst) {
+    if (*src == dst) {
         if (verbosity > 1) {
             std::cout << "...failed: adding a self loop" << std::endl;
         }
         return false;
     }
-    src.addAdj(dst);
+    src->addAdj(dst);
     if (verbosity > 1) {
         std::cout << "...ok" << std::endl;
     }
@@ -154,15 +155,15 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     // Update the possible adjacent nodes at each node
     for (int srcId = 2; srcId <= totalNode; srcId++) {
-        auto src = graph->getNode(srcId);
-        if (src.getType() == AND) {
+        auto src = graph->getNodeAt(srcId);
+        if (src->getType() == AND) {
             for (int dst = 1; dst <= numOr; dst++) {
-                src.addPossibleAdj(graph->getNode(dst));
+                src->addPossibleAdj(*graph->getNodeAt(dst));
                 totalEdge += 1;
             }
         } else {
             for (int dst = numOr + numLeaf + 1; dst <= totalNode; dst++) {
-                src.addPossibleAdj(graph->getNode(dst));
+                src->addPossibleAdj(*graph->getNodeAt(dst));
                 totalEdge += 1;
             }
         }
@@ -172,7 +173,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cout << "All possible edges: \n";
         int index = 0;
         for (int src = 2; src <= totalNode; src++) {
-            for (auto &dst: graph->getNode(src).getPossibleAdj())
+            for (auto &dst: graph->getNodeAt(src)->getPossibleAdj())
                 std::cout << "index: " << index << " (" << src << ", " << dst->getId() << ") " << std::endl;
             index += 1;
         }
@@ -189,32 +190,32 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     // Generate an edge from an AND node to the goal node if alt mode is on
     if (alt) {
-        auto src = graph->getNode(Random::get(numOr + numLeaf + 1, totalNode));
-        auto dst = graph->getNode(graph->getGoalId());
-        addEdge(src, dst, cycleOk, *graph);
+        auto src = graph->getNodeAt(Random::get(numOr + numLeaf + 1, totalNode));
+        auto dst = graph->getNodeAt(graph->getGoalId());
+        addEdge(src, *dst, cycleOk, *graph);
 
         if (verbosity > 1) {
-            std::cout << "Alt: generated an edge from" << src.getId() << "to " << dst.getId() << std::endl;
+            std::cout << "Alt: generated an edge from" << src->getId() << "to " << dst->getId() << std::endl;
         }
 
         if (relaxed) {
             if (verbosity > 1) {
-                std::cout << "Alt: removing edge: (" << src.getId() << ", " << dst.getId() << ")" << std::endl;
+                std::cout << "Alt: removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
             }
 
-            addEdge(src, dst, cycleOk, *graph);
+            addEdge(src, *dst, cycleOk, *graph);
             totalEdge -= 1;
-            src.removePossibleAdj(dst);
+            src->removePossibleAdj(*dst);
         } else {
             if (verbosity > 1) {
-                for (auto &d: src.getPossibleAdj()) {
-                    std::cout << "Alt: removing edge: (" << src.getId() << ", " << d->getId() << ")" << std::endl;
+                for (auto &d: src->getPossibleAdj()) {
+                    std::cout << "Alt: removing edge: (" << src->getId() << ", " << d->getId() << ")" << std::endl;
                 }
             }
 
-            addEdge(src, dst, cycleOk, *graph);
-            totalEdge -= src.getAvailNum();
-            src.clearPossibleAdj();
+            addEdge(src, *dst, cycleOk, *graph);
+            totalEdge -= src->getAvailNum();
+            src->clearPossibleAdj();
         }
 
         numEdge -= 1;
@@ -237,7 +238,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         // Add up available edge number of every node till we run over the chosen index
         for (int i = 1; i <= totalNode; i++) {
-            src = &graph->getNode(i);
+            src = graph->getNodeAt(i);
             temp += src->getAvailNum();
 
             // If we run over the chosen index, we are at the correct src
@@ -261,7 +262,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
-        if (addEdge(*src, *dst, cycleOk, *graph)) {
+        if (addEdge(src, *dst, cycleOk, *graph)) {
             // Delete the added edge from the list of all edges
             if (!relaxed && src->getType() == AND) {
                 // Delete all edges that starts from this src, as only one can exist
@@ -292,7 +293,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "Remaining possible edges: \n";
             int index = 0;
             for (int s = 2; s <= totalNode; s++) {
-                for (auto &d: graph->getNode(s).getPossibleAdj())
+                for (auto &d: graph->getNodeAt(s)->getPossibleAdj())
                     std::cout << "index: " << index << " (" << s << ", " << d->getId() << ") " << std::endl;
                 index += 1;
             }
@@ -302,19 +303,18 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
+    }
 
-        if (test) {
-            if (verbosity > 1) {
-                std::cout << "Testing if the generated graph has a feasible solution: ";
-                auto result = Sat(*graph, std::nullopt);
-                if (result != std::nullopt) {
-                    std::cout << "yes" << std::endl;
-                } else {
-                    std::cout << "no" << std::endl;
-                }
-            }
+    if (test) {
+        std::cout << "Testing if the generated graph has a feasible solution: ";
+        auto result = Sat(*graph, std::nullopt);
+        if (result != std::nullopt) {
+            std::cout << "yes" << std::endl;
+        } else {
+            std::cout << "no" << std::endl;
         }
     }
+
     return graph;
 }
 

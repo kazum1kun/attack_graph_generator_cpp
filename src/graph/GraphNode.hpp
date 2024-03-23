@@ -45,10 +45,9 @@ public:
         done = 0;
         parent = nullptr;
         posInHeap = -1;
-//
-//        predecessor = std::unordered_set<GraphNode *>{};
-//        adjNodes = std::list<GraphNode *>{};
-//        possibleAdjNodes = std::list<GraphNode *>{};
+
+        adjNodes = std::list<GraphNode *>{};
+        possibleAdjNodes = std::list<GraphNode *>{};
     }
 
     ~GraphNode() = default;

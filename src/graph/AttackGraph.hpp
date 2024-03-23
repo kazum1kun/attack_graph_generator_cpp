@@ -20,7 +20,7 @@ public:
     }
 
     ~AttackGraph() {
-        for (const auto &node: this->nodes) {
+        for (const auto *node: this->nodes) {
             delete node;
         }
     }
@@ -30,11 +30,11 @@ public:
     }
 
     void addEdgeById(int src, int dst) const {
-        getNode(src).addAdj(getNode(dst));
+        getNodeAt(src)->addAdj(*getNodeAt(dst));
     }
 
-    [[nodiscard]] GraphNode &getNode(int index) const {
-        return *this->nodes[index];
+    [[nodiscard]] GraphNode *getNodeAt(int index) const {
+        return this->nodes[index];
     }
 
     std::vector<GraphNode *> &getNodes() {

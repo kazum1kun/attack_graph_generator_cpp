@@ -14,7 +14,7 @@ std::forward_list<Edge> constructTrace(AttackGraph &graph) {
     std::queue<GraphNode *> q;
     std::forward_list<Edge> results;
 
-    q.push(&graph.getNode(graph.getGoalId()));
+    q.push(graph.getNodeAt(graph.getGoalId()));
     while (!q.empty()) {
         auto v = q.front();
         q.pop();
@@ -41,7 +41,8 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
 
     // Initialize the data structure
     // Note: type, done, inDegree, and color is already correctly set up before the graph is passed in here
-    for (auto &node: graph.getNodes()) {
+    for (auto *node: graph.getNodes()) {
+        if (node == nullptr) continue;
         if (node->getType() == OR) {
             node->setWeight(INFINITY);
         } else if (node->getType() == AND) {
@@ -57,7 +58,7 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
         if (u->getId() == graph.getGoalId()) {
             goto trace_found;
         }
-        for (auto &v: u->getAdj()) {
+        for (auto *v: u->getAdj()) {
             if (u->getColor() == BLACK) break;
             // For now just ignore the weights (default to IoTA 2022 settings: edges = 1, nodes = 0)
             double temp = u->getWeight() + 1 + 0;
