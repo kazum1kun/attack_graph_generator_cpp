@@ -37,7 +37,7 @@ public:
         return *this->nodes[index];
     }
 
-    std::vector<GraphNode *>& getNodes() {
+    std::vector<GraphNode *> &getNodes() {
         return nodes;
     }
 

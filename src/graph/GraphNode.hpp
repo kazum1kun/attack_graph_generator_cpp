@@ -27,7 +27,7 @@ private:
     std::string desc;
     NodeType type;
     NodeColor color;
-    GraphNode* parent;
+    GraphNode *parent;
     int done;
     int posInHeap;
 
@@ -36,9 +36,9 @@ private:
     std::unordered_set<GraphNode *> revAdjNodes;
 public:
     GraphNode(int id, NodeType type, std::string desc) {
-        this -> id = id;
-        this -> type = type;
-        this -> desc = std::move(desc);
+        this->id = id;
+        this->type = type;
+        this->desc = std::move(desc);
         availableAdj = 0;
         weight = 0.0;
         color = WHITE;
@@ -70,11 +70,11 @@ public:
 
     // Returns a constant_iterator that needs to be de-referenced before accessing the content it points to
     std::list<GraphNode *>::const_iterator queryPossibleAdjRev(int index) {
-        return std::next(possibleAdjNodes.cend(), -index-1);
+        return std::next(possibleAdjNodes.cend(), -index - 1);
     }
 
-    bool adjContains(GraphNode & query) {
-        auto result = std::find(adjNodes.begin(), adjNodes.end(),&query);
+    bool adjContains(GraphNode &query) {
+        auto result = std::find(adjNodes.begin(), adjNodes.end(), &query);
         return result != adjNodes.end();
     }
 
@@ -83,7 +83,7 @@ public:
         availableAdj -= 1;
     }
 
-    std::list<GraphNode *>& getPossibleAdj() {
+    std::list<GraphNode *> &getPossibleAdj() {
         return possibleAdjNodes;
     };
 
@@ -116,11 +116,11 @@ public:
         return revAdjNodes;
     }
 
-    void addRevAdj(GraphNode& src) {
+    void addRevAdj(GraphNode &src) {
         revAdjNodes.insert(&src);
     }
 
-    void removeRevAdj(GraphNode& src) {
+    void removeRevAdj(GraphNode &src) {
         revAdjNodes.erase(&src);
     }
 
@@ -184,15 +184,15 @@ public:
         color = newColor;
     }
 
-    bool operator==(GraphNode const & other) const {
+    bool operator==(GraphNode const &other) const {
         return id == other.id;
     }
 
-    bool operator!=(GraphNode const & other) const {
+    bool operator!=(GraphNode const &other) const {
         return !(*this == other);
     }
 
-    bool operator<(GraphNode const & other) const {
+    bool operator<(GraphNode const &other) const {
         return weight < other.getWeight();
     }
 };

@@ -7,27 +7,26 @@
 #include <vector>
 #include "AttackGraph.hpp"
 
-std::vector<std::string> split(std::string s, const std::string& delimiter){
+std::vector<std::string> split(std::string s, const std::string &delimiter) {
     std::vector<std::string> res;
 
     size_t pos = 0;
-    while(pos < s.size()){
+    while (pos < s.size()) {
         pos = s.find(delimiter);
-        res.push_back(s.substr(0,pos));
-        s.erase(0,pos+delimiter.length());
+        res.push_back(s.substr(0, pos));
+        s.erase(0, pos + delimiter.length());
     }
     return res;
 }
 
 
-AttackGraph csvToGraph(const std::string& path) {
+AttackGraph csvToGraph(const std::string &path) {
     // ifstream is used for reading files
-    std::ifstream arcFile {path + "/ARCS.txt"};
-    std::ifstream vertFile {path + "/VERTICES.txt"};
+    std::ifstream arcFile{path + "/ARCS.txt"};
+    std::ifstream vertFile{path + "/VERTICES.txt"};
 
     // If we couldn't open the input file stream for reading
-    if (!arcFile || !vertFile)
-    {
+    if (!arcFile || !vertFile) {
         // Print an error and exit
         std::cerr << "Unable to open csv file for reading\n";
         std::exit(1);

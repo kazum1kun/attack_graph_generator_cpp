@@ -14,16 +14,16 @@ extern bool manualStepping;
 
 // Check if adding an edge from src to dst will cause a cycle
 // An adaptation of the Kahn's algorithm
-bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph& graph) {
+bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
     // Pretend the edge exists
     src.addAdj(dst);
     size_t edgeCount = 0;
     std::queue<GraphNode *> q;
     // Save the original inDegree info
-    std::unordered_map<GraphNode*, size_t> inDegree;
+    std::unordered_map<GraphNode *, size_t> inDegree;
 
     // Scan the vertexes for leaf nodes
-    for (auto& node: graph.getNodes()) {
+    for (auto &node: graph.getNodes()) {
         auto deg = node->getInDegree();
 
         if (deg == 0) q.push(node);
@@ -37,7 +37,7 @@ bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph& graph) {
         auto u = q.front();
         q.pop();
 
-        for (auto& v: u->getAdj()) {
+        for (auto &v: u->getAdj()) {
             inDegree.at(v) -= 1;
             edgeCount -= 1;
             if (inDegree.at(v) == 0) q.push(v);
@@ -129,7 +129,8 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         auto typeStr = (type == LEAF) ? "LEAF" : (type == OR) ? "OR" : "AND";
         if (verbosity > 1) {
-            std::cout << "Generated node: {id = " << i << ", type = " << typeStr << ", name = " << desc << "}" << std::endl;
+            std::cout << "Generated node: {id = " << i << ", type = " << typeStr << ", name = " << desc << "}"
+                      << std::endl;
         }
 
         const auto node = new GraphNode(i, type, desc);
@@ -141,7 +142,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     }
 
     if (manualStepping) {
-        std:: cout << "\nr>";
+        std::cout << "\nr>";
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
@@ -170,14 +171,14 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cout << "All possible edges: \n";
         int index = 0;
         for (int src = 2; src <= totalNode; src++) {
-            for (auto& dst : graph->getNode(src).getPossibleAdj())
+            for (auto &dst: graph->getNode(src).getPossibleAdj())
                 std::cout << "index: " << index << " (" << src << ", " << dst->getId() << ") " << std::endl;
-                index += 1;
+            index += 1;
         }
     }
 
     if (manualStepping) {
-        std:: cout << "\nr>";
+        std::cout << "\nr>";
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
@@ -205,7 +206,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             src.removePossibleAdj(dst);
         } else {
             if (verbosity > 1) {
-                for (auto& d : src.getPossibleAdj()) {
+                for (auto &d: src.getPossibleAdj()) {
                     std::cout << "Alt: removing edge: (" << src.getId() << ", " << d->getId() << ")" << std::endl;
                 }
             }
@@ -218,7 +219,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         numEdge -= 1;
 
         if (manualStepping) {
-            std:: cout << "\nr>";
+            std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }
@@ -255,7 +256,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         if (manualStepping) {
-            std:: cout << "\nr>";
+            std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
@@ -264,7 +265,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             if (!relaxed && src->getType() == AND) {
                 // Delete all edges that starts from this src, as only one can exist
                 if (verbosity > 1) {
-                    for (auto& d : src->getPossibleAdj()) {
+                    for (auto &d: src->getPossibleAdj()) {
                         std::cout << "removing edge: (" << src->getId() << ", "
                                   << d->getId() << ")" << std::endl;
                     }
@@ -282,7 +283,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         if (manualStepping) {
-            std:: cout << "\nr>";
+            std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
@@ -290,14 +291,14 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "Remaining possible edges: \n";
             int index = 0;
             for (int s = 2; s <= totalNode; s++) {
-                for (auto& d : graph->getNode(s).getPossibleAdj())
+                for (auto &d: graph->getNode(s).getPossibleAdj())
                     std::cout << "index: " << index << " (" << s << ", " << d->getId() << ") " << std::endl;
                 index += 1;
             }
         }
 
         if (manualStepping) {
-            std:: cout << "\nr>";
+            std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }

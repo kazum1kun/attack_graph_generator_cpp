@@ -10,7 +10,7 @@
 #include <forward_list>
 
 
-std::forward_list<Edge> constructTrace(AttackGraph& graph) {
+std::forward_list<Edge> constructTrace(AttackGraph &graph) {
     std::queue<GraphNode *> q;
     std::forward_list<Edge> results;
 
@@ -25,7 +25,7 @@ std::forward_list<Edge> constructTrace(AttackGraph& graph) {
             results.emplace_front(*u, *v);
         }
         if (v->getType() == AND) {
-            for (auto u : v->getRevAdj()) {
+            for (auto u: v->getRevAdj()) {
                 q.push(u);
                 results.emplace_front(*u, *v);
             }
@@ -35,7 +35,7 @@ std::forward_list<Edge> constructTrace(AttackGraph& graph) {
 }
 
 // Implements Alg. 1 of the IoTDI paper SAT(G)
-std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::optional<std::vector<double>>& weight) {
+std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::optional<std::vector<double>> &weight) {
     auto pq = PriorityQueue(graph.getSize());
     const double INFINITY = std::numeric_limits<double>::max();
 
@@ -57,7 +57,7 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
         if (u->getId() == graph.getGoalId()) {
             goto trace_found;
         }
-        for (auto& v : u->getAdj()) {
+        for (auto &v: u->getAdj()) {
             if (u->getColor() == BLACK) break;
             // For now just ignore the weights (default to IoTA 2022 settings: edges = 1, nodes = 0)
             double temp = u->getWeight() + 1 + 0;
@@ -67,15 +67,13 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
                     v->setParent(*u);
                     pq.push(v);
                     v->setColor(GRAY);
-                }
-                else if (temp < v->getWeight()) {
+                } else if (temp < v->getWeight()) {
                     v->setWeight(temp);
                     v->setParent(*u);
                     pq.decreaseKey(v->getPosInHeap(), temp);
                 }
                 v->incDone();
-            }
-            else if (v->getType() == AND) {
+            } else if (v->getType() == AND) {
                 v->setWeight(std::max(v->getWeight(), temp));
                 v->incDone();
                 if (v->getDone() == v->getInDegree()) {
@@ -88,7 +86,7 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
     // No attack trace is found
     return std::nullopt;
     trace_found:
-        // Extract the trace
+    // Extract the trace
     return constructTrace(graph);
 }
 

@@ -10,13 +10,11 @@ private:
     GraphNode **nodes;  /* array of pointers to elements */
 
     // Recursion
-    void siftUp (int pos)
-    {
+    void siftUp(int pos) {
         int parent;
 
-        parent = pos/2;
-        if (pos > 1 && pos <= size && nodes[pos]->getWeight() < nodes[parent]->getWeight())
-        {
+        parent = pos / 2;
+        if (pos > 1 && pos <= size && nodes[pos]->getWeight() < nodes[parent]->getWeight()) {
             std::swap(nodes[pos], nodes[parent]);
 
             nodes[pos]->setPosInHeap(pos);
@@ -27,12 +25,11 @@ private:
     }
 
     // Recursion
-    void siftDown (int pos)
-    {
+    void siftDown(int pos) {
         int l, r, smallest;
 
-        l = pos*2;
-        r = l+1;
+        l = pos * 2;
+        r = l + 1;
 
         if (l <= size && nodes[l]->getWeight() < nodes[pos]->getWeight())
             smallest = l;
@@ -42,35 +39,34 @@ private:
         if (r <= size && nodes[r]->getWeight() < nodes[smallest]->getWeight())
             smallest = r;
 
-        if (smallest != pos){
+        if (smallest != pos) {
             std::swap(nodes[pos], nodes[smallest]);
 
             nodes[pos]->setPosInHeap(pos);
             nodes[smallest]->setPosInHeap(smallest);
 
-            siftDown( smallest);
+            siftDown(smallest);
         }
     }
+
 public:
-    explicit PriorityQueue (int capacity)
-    {
-       nodes = new GraphNode*[capacity + 1]();
-       this->capacity = capacity;
-       this->size = 0;
+    explicit PriorityQueue(int capacity) {
+        nodes = new GraphNode *[capacity + 1]();
+        this->capacity = capacity;
+        this->size = 0;
     }
+
     ~PriorityQueue() {
         delete[] nodes;
     }
 
-    void build()
-    {
+    void build() {
         int i;
-        for (i=size/2; i>0; i--) siftDown(i);
+        for (i = size / 2; i > 0; i--) siftDown(i);
     }
 
-    int push(GraphNode *node)
-    {
-        if (size >= capacity){
+    int push(GraphNode *node) {
+        if (size >= capacity) {
             printf("Error inserting node to pq: pq is full. Capacity=%d, Size=%d\n", capacity, size);
             return 1;
         }
@@ -83,9 +79,8 @@ public:
         return 0;
     }
 
-    int decreaseKey (int pos, double newKey)
-    {
-        if (pos < 1 || pos > size || newKey >= nodes[pos]->getWeight()){
+    int decreaseKey(int pos, double newKey) {
+        if (pos < 1 || pos > size || newKey >= nodes[pos]->getWeight()) {
             printf("Error in decreaseKey\n");
             return 1;
         }
@@ -100,11 +95,10 @@ public:
         return size == 0;
     }
 
-    GraphNode *pop ()
-    {
+    GraphNode *pop() {
         GraphNode *min, *last;
 
-        if (size <= 0){
+        if (size <= 0) {
             printf("Error extracting min: pq empty\n");
             return nullptr;
         }
@@ -126,12 +120,11 @@ public:
         size = 0;
     }
 
-    void print()
-    {
+    void print() {
         int i;
         printf("-----\n");
         printf("capacity=%d, size=%d\n", capacity, size);
-        for (i=1; i<=size; i++) printf("%4d::%f, ", nodes[i]->getId(), nodes[i]->getWeight());
+        for (i = 1; i <= size; i++) printf("%4d::%f, ", nodes[i]->getId(), nodes[i]->getWeight());
         printf("=====\n");
     }
 };
