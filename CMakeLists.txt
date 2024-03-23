@@ -12,7 +12,7 @@ add_executable(AttackGraphGenerator src/main.cpp
         src/io/CsvToPdf.hpp
         src/sat/ShortestTrace.hpp
         src/priority_queue/PriorityQueue.hpp
-        src/priority_queue/PriorityQueue.hpp)
+        src/io/CsvToGraph.hpp)
 
 find_package(effolkronium_random REQUIRED)
 find_package(argparse REQUIRED)
@@ -22,6 +22,8 @@ target_include_directories(AttackGraphGenerator
         PRIVATE
         ${PROJECT_SOURCE_DIR}/src/graph
         ${PROJECT_SOURCE_DIR}/src/io
+        ${PROJECT_SOURCE_DIR}/src/sat
+        ${PROJECT_SOURCE_DIR}/src/priority_queue
 )
 
 target_link_libraries(AttackGraphGenerator

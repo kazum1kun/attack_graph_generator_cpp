@@ -2,15 +2,41 @@
 #define ATTACKGRAPHGENERATOR_SHORTESTTRACE_HPP
 
 #include "AttackGraph.hpp"
+#include "PriorityQueue.hpp"
 #include <optional>
 #include <vector>
 #include <queue>
 #include <limits>
+#include <forward_list>
 
+
+std::forward_list<Edge> constructTrace(AttackGraph& graph) {
+    std::queue<GraphNode *> q;
+    std::forward_list<Edge> results;
+
+    q.push(graph.getNode(graph.getGoalId()));
+    while (!q.empty()) {
+        auto v = q.front();
+        q.pop();
+
+        if (v->getType() == OR) {
+            auto u = v->getParent();
+            q.push(u);
+            results.emplace_front(u, v);
+        }
+        if (v->getType() == AND) {
+            for (auto u : v->getRevAdj()) {
+                q.push(u);
+                results.emplace_front(u, v);
+            }
+        }
+    }
+    return results;
+}
 
 // Implements Alg. 1 of the IoTDI paper SAT(G)
-void Sat(AttackGraph graph, const std::optional<std::vector<double>>& weight) {
-    std::priority_queue<GraphNode*, std::vector<GraphNode *>, std::greater<>> pq;
+std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::optional<std::vector<double>>& weight) {
+    auto pq = PriorityQueue(graph.getSize());
     const double INFINITY = std::numeric_limits<double>::max();
 
     // Initialize the data structure
@@ -27,8 +53,7 @@ void Sat(AttackGraph graph, const std::optional<std::vector<double>>& weight) {
     }
 
     while (!pq.empty()) {
-        auto u = pq.top();
-        pq.pop();
+        auto u = pq.pop();
         if (u->getId() == graph.getGoalId()) {
             goto trace_found;
         }
@@ -46,6 +71,7 @@ void Sat(AttackGraph graph, const std::optional<std::vector<double>>& weight) {
                 else if (temp < v->getWeight()) {
                     v->setWeight(temp);
                     v->setParent(u);
+                    pq.decreaseKey(v->getPosInHeap(), temp);
                 }
                 v->incDone();
             }
@@ -60,10 +86,10 @@ void Sat(AttackGraph graph, const std::optional<std::vector<double>>& weight) {
         }
     }
     // No attack trace is found
-    return;
+    return std::nullopt;
     trace_found:
         // Extract the trace
-    return;
+    return constructTrace(graph);
 }
 
 #endif //ATTACKGRAPHGENERATOR_SHORTESTTRACE_HPP

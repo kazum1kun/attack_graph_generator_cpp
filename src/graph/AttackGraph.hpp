@@ -29,11 +29,14 @@ public:
         this->nodes[node->getId()] = node;
     }
 
+    void addEdgeById(int src, int dst) const {
+        getNode(src)->addAdj(getNode(dst));
+    }
+
     [[nodiscard]] GraphNode *getNode(int index) const {
         return this->nodes[index];
     }
 
-    // Skip the first node
     std::vector<GraphNode *>* getNodes() {
         return &nodes;
     }

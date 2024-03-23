@@ -31,12 +31,7 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
     }
     // Check for cycles (a cycle is found when the dst predecessors are a subset of src predecessor)
     // TODO: finish the "real" cycle detection algorithm
-    if (!cycleOk && src->predContains(dst->getPred())) {
-        if (verbosity > 1) {
-            std::cout << "...failed: will form a cycle" << std::endl;
-        }
-        return false;
-    }
+
     if (src->adjContains(dst)) {
         if (verbosity > 1) {
             std::cout << "...failed: already exists" << std::endl;
@@ -61,16 +56,12 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
         q.push(dst);
         while (!q.empty()) {
             auto node = q.front();
-            node->addPred(src->getPred());
             for (auto adj: node->getAdj()) {
                 q.push(adj);
             }
             q.pop();
         }
     }
-
-    // Out-degree is already incremented at the src node
-    dst->incInDegree();
 
     return true;
 }
@@ -115,7 +106,6 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         const auto node = new GraphNode(i, type, desc);
-        node->addPred(node);
         graph->addNode(node);
     }
 

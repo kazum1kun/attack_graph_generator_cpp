@@ -8,32 +8,6 @@ private:
     int capacity;  /* max size of the heap */
     int size;      /* current size of the heap */
     GraphNode **nodes;  /* array of pointers to elements */
-public:
-    explicit PriorityQueue (int capacity)
-    {
-       nodes = new GraphNode*[capacity + 1]();
-       this->capacity = capacity;
-       this->size = 0;
-    }
-    ~PriorityQueue() {
-        delete[] nodes;
-    }
-
-    void reset()
-    {
-        delete[] nodes;
-        nodes = new GraphNode*[capacity + 1]();
-        size = 0;
-    }
-
-    void print()
-    {
-        int i;
-        printf("-----\n");
-        printf("capacity=%d, size=%d\n", capacity, size);
-        for (i=1; i<=size; i++) printf("%4d::%f, ", nodes[i]->getId(), nodes[i]->getWeight());
-        printf("=====\n");
-    }
 
     // Recursion
     void siftUp (int pos)
@@ -77,6 +51,16 @@ public:
             siftDown( smallest);
         }
     }
+public:
+    explicit PriorityQueue (int capacity)
+    {
+       nodes = new GraphNode*[capacity + 1]();
+       this->capacity = capacity;
+       this->size = 0;
+    }
+    ~PriorityQueue() {
+        delete[] nodes;
+    }
 
     void build()
     {
@@ -84,7 +68,7 @@ public:
         for (i=size/2; i>0; i--) siftDown(i);
     }
 
-    int insert(GraphNode *node)
+    int push(GraphNode *node)
     {
         if (size >= capacity){
             printf("Error inserting node to pq: pq is full. Capacity=%d, Size=%d\n", capacity, size);
@@ -112,7 +96,11 @@ public:
         return 0;
     }
 
-    GraphNode *extractMin ()
+    [[nodiscard]] bool empty() const {
+        return size == 0;
+    }
+
+    GraphNode *pop ()
     {
         GraphNode *min, *last;
 
@@ -130,6 +118,21 @@ public:
         siftDown(1);
 
         return min;
+    }
+
+    void reset() {
+        delete[] nodes;
+        nodes = new GraphNode *[capacity + 1]();
+        size = 0;
+    }
+
+    void print()
+    {
+        int i;
+        printf("-----\n");
+        printf("capacity=%d, size=%d\n", capacity, size);
+        for (i=1; i<=size; i++) printf("%4d::%f, ", nodes[i]->getId(), nodes[i]->getWeight());
+        printf("=====\n");
     }
 };
 
