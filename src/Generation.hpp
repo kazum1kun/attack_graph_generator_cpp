@@ -12,27 +12,54 @@ extern int verbosity;
 extern bool manualStepping;
 
 
-struct PqNode {
-    int weight;
-    GraphNode *node;
-    bool operator<(const PqNode& other) const {
-        return weight < other.weight;
-    }
-};
-
 // Check if adding an edge from src to dst will cause a cycle
-bool causesCycles(GraphNode *src, GraphNode *dst, AttackGraph *graph) {
+// An adaptation of the Kahn's algorithm
+bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph& graph) {
+    // Pretend the edge exists
+    src.addAdj(dst);
+    size_t edgeCount = 0;
+    std::queue<GraphNode *> q;
+    // Save the original inDegree info
+    std::unordered_map<GraphNode*, size_t> inDegree;
 
+    // Scan the vertexes for leaf nodes
+    for (auto& node: graph.getNodes()) {
+        auto deg = node->getInDegree();
+
+        if (deg == 0) q.push(node);
+        else edgeCount += deg;
+
+        inDegree.insert({node, deg});
+    }
+
+    // "Remove" edges that originates from the source
+    while (!q.empty()) {
+        auto u = q.front();
+        q.pop();
+
+        for (auto& v: u->getAdj()) {
+            inDegree.at(v) -= 1;
+            edgeCount -= 1;
+            if (inDegree.at(v) == 0) q.push(v);
+        }
+    }
+
+    // Remove the fake edge
+    src.removeLastAdj(dst);
+
+    return edgeCount > 0;
 }
 
-inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
+inline bool addEdge(GraphNode &src, GraphNode &dst, const bool cycleOk, AttackGraph &graph) {
     if (verbosity > 1) {
-        std::cout << "Attempting to add edge from " << src->getId() << " to " << dst->getId();
+        std::cout << "Attempting to add edge from " << src.getId() << " to " << dst.getId();
     }
-    // Check for cycles (a cycle is found when the dst predecessors are a subset of src predecessor)
-    // TODO: finish the "real" cycle detection algorithm
+    // Check for cycles if cycleOk is false (using Kahn's algorithm)
+    if (!cycleOk && cycleExists(src, dst, graph)) {
+        return false;
+    }
 
-    if (src->adjContains(dst)) {
+    if (src.adjContains(dst)) {
         if (verbosity > 1) {
             std::cout << "...failed: already exists" << std::endl;
         }
@@ -44,7 +71,7 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
         }
         return false;
     }
-    src->addAdj(dst);
+    src.addAdj(dst);
     if (verbosity > 1) {
         std::cout << "...ok" << std::endl;
     }
@@ -53,7 +80,7 @@ inline bool addEdge(GraphNode *src, GraphNode *dst, const bool cycleOk) {
     if (!cycleOk) {
         std::queue<GraphNode *> q;
 
-        q.push(dst);
+        q.push(&dst);
         while (!q.empty()) {
             auto node = q.front();
             for (auto adj: node->getAdj()) {
@@ -106,7 +133,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         const auto node = new GraphNode(i, type, desc);
-        graph->addNode(node);
+        graph->addNode(*node);
     }
 
     if (verbosity > 0) {
@@ -126,14 +153,14 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     // Update the possible adjacent nodes at each node
     for (int srcId = 2; srcId <= totalNode; srcId++) {
         auto src = graph->getNode(srcId);
-        if (src->getType() == AND) {
+        if (src.getType() == AND) {
             for (int dst = 1; dst <= numOr; dst++) {
-                src->addPossibleAdj(graph->getNode(dst));
+                src.addPossibleAdj(graph->getNode(dst));
                 totalEdge += 1;
             }
         } else {
             for (int dst = numOr + numLeaf + 1; dst <= totalNode; dst++) {
-                src->addPossibleAdj(graph->getNode(dst));
+                src.addPossibleAdj(graph->getNode(dst));
                 totalEdge += 1;
             }
         }
@@ -143,7 +170,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         std::cout << "All possible edges: \n";
         int index = 0;
         for (int src = 2; src <= totalNode; src++) {
-            for (auto& dst : graph->getNode(src)->getPossibleAdj())
+            for (auto& dst : graph->getNode(src).getPossibleAdj())
                 std::cout << "index: " << index << " (" << src << ", " << dst->getId() << ") " << std::endl;
                 index += 1;
         }
@@ -162,30 +189,30 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     if (alt) {
         auto src = graph->getNode(Random::get(numOr + numLeaf + 1, totalNode));
         auto dst = graph->getNode(graph->getGoalId());
-        addEdge(src, dst, cycleOk);
+        addEdge(src, dst, cycleOk, *graph);
 
         if (verbosity > 1) {
-            std::cout << "Alt: generated an edge from" << src << "to " << dst->getId() << std::endl;
+            std::cout << "Alt: generated an edge from" << src.getId() << "to " << dst.getId() << std::endl;
         }
 
         if (relaxed) {
             if (verbosity > 1) {
-                std::cout << "Alt: removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
+                std::cout << "Alt: removing edge: (" << src.getId() << ", " << dst.getId() << ")" << std::endl;
             }
 
-            addEdge(src, dst, cycleOk);
+            addEdge(src, dst, cycleOk, *graph);
             totalEdge -= 1;
-            src->removePossibleAdj(dst);
+            src.removePossibleAdj(dst);
         } else {
             if (verbosity > 1) {
-                for (auto& d : src->getPossibleAdj()) {
-                    std::cout << "Alt: removing edge: (" << src->getId() << ", " << d->getId() << ")" << std::endl;
+                for (auto& d : src.getPossibleAdj()) {
+                    std::cout << "Alt: removing edge: (" << src.getId() << ", " << d->getId() << ")" << std::endl;
                 }
             }
 
-            addEdge(src, dst, cycleOk);
-            totalEdge -= src->getAvailNum();
-            src->clearPossibleAdj();
+            addEdge(src, dst, cycleOk, *graph);
+            totalEdge -= src.getAvailNum();
+            src.clearPossibleAdj();
         }
 
         numEdge -= 1;
@@ -208,7 +235,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         // Add up available edge number of every node till we run over the chosen index
         for (int i = 1; i <= totalNode; i++) {
-            src = graph->getNode(i);
+            src = &graph->getNode(i);
             temp += src->getAvailNum();
 
             // If we run over the chosen index, we are at the correct src
@@ -232,7 +259,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
-        if (addEdge(src, dst, cycleOk)) {
+        if (addEdge(*src, *dst, cycleOk, *graph)) {
             // Delete the added edge from the list of all edges
             if (!relaxed && src->getType() == AND) {
                 // Delete all edges that starts from this src, as only one can exist
@@ -263,7 +290,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "Remaining possible edges: \n";
             int index = 0;
             for (int s = 2; s <= totalNode; s++) {
-                for (auto& d : graph->getNode(s)->getPossibleAdj())
+                for (auto& d : graph->getNode(s).getPossibleAdj())
                     std::cout << "index: " << index << " (" << s << ", " << d->getId() << ") " << std::endl;
                 index += 1;
             }

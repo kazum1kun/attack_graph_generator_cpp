@@ -25,20 +25,20 @@ public:
         }
     }
 
-    void addNode(GraphNode *node) {
-        this->nodes[node->getId()] = node;
+    void addNode(GraphNode &node) {
+        this->nodes[node.getId()] = &node;
     }
 
     void addEdgeById(int src, int dst) const {
-        getNode(src)->addAdj(getNode(dst));
+        getNode(src).addAdj(getNode(dst));
     }
 
-    [[nodiscard]] GraphNode *getNode(int index) const {
-        return this->nodes[index];
+    [[nodiscard]] GraphNode &getNode(int index) const {
+        return *this->nodes[index];
     }
 
-    std::vector<GraphNode *>* getNodes() {
-        return &nodes;
+    std::vector<GraphNode *>& getNodes() {
+        return nodes;
     }
 
     [[nodiscard]] int getGoalId() const {

@@ -27,20 +27,20 @@ void graphToCsv(AttackGraph *graph, std::string &outDir, bool rndEdgeWeight) {
     std::fstream arcFile(outDir + "/ARCS.CSV", std::ios::out | std::ios::trunc);
 
     for (int i = 1; i <= graph->getSize(); ++i) {
-        GraphNode *node = graph->getNode(i);
+        GraphNode &node = graph->getNode(i);
         std::string type;
-        if (node->getType() == LEAF) type = "LEAF";
-        else if (node->getType() == AND) type = "AND";
+        if (node.getType() == LEAF) type = "LEAF";
+        else if (node.getType() == AND) type = "AND";
         else type = "OR";
 
-        vertFile << std::format("{},\"{}\",\"{}\",{}\n", node->getId(), node->getDesc(), type,
-                                node->getType() == LEAF ? 1 : 0);
+        vertFile << std::format("{},\"{}\",\"{}\",{}\n", node.getId(), node.getDesc(), type,
+                                node.getType() == LEAF ? 1 : 0);
 
-        for (const auto &adj: node->getAdj()) {
+        for (const auto &adj: node.getAdj()) {
             double edgeProb = 1.0;
             if (rndEdgeWeight) edgeProb = generateEdgeWeight(graph->getNumEdges());
 
-            arcFile << std::format("{},{},{}\n", adj->getId(), node->getId(), edgeProb);
+            arcFile << std::format("{},{},{}\n", adj->getId(), node.getId(), edgeProb);
         }
     }
     vertFile.close();

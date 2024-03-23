@@ -14,7 +14,7 @@ std::forward_list<Edge> constructTrace(AttackGraph& graph) {
     std::queue<GraphNode *> q;
     std::forward_list<Edge> results;
 
-    q.push(graph.getNode(graph.getGoalId()));
+    q.push(&graph.getNode(graph.getGoalId()));
     while (!q.empty()) {
         auto v = q.front();
         q.pop();
@@ -22,12 +22,12 @@ std::forward_list<Edge> constructTrace(AttackGraph& graph) {
         if (v->getType() == OR) {
             auto u = v->getParent();
             q.push(u);
-            results.emplace_front(u, v);
+            results.emplace_front(*u, *v);
         }
         if (v->getType() == AND) {
             for (auto u : v->getRevAdj()) {
                 q.push(u);
-                results.emplace_front(u, v);
+                results.emplace_front(*u, *v);
             }
         }
     }
@@ -41,7 +41,7 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
 
     // Initialize the data structure
     // Note: type, done, inDegree, and color is already correctly set up before the graph is passed in here
-    for (auto &node: *graph.getNodes()) {
+    for (auto &node: graph.getNodes()) {
         if (node->getType() == OR) {
             node->setWeight(INFINITY);
         } else if (node->getType() == AND) {
@@ -64,13 +64,13 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
             if (v->getType() == OR) {
                 if (v->getDone() == 0) {
                     v->setWeight(temp);
-                    v->setParent(u);
+                    v->setParent(*u);
                     pq.push(v);
                     v->setColor(GRAY);
                 }
                 else if (temp < v->getWeight()) {
                     v->setWeight(temp);
-                    v->setParent(u);
+                    v->setParent(*u);
                     pq.decreaseKey(v->getPosInHeap(), temp);
                 }
                 v->incDone();

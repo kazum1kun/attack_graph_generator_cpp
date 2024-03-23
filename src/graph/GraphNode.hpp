@@ -53,13 +53,13 @@ public:
 
     ~GraphNode() = default;
 
-    void addPossibleAdj(GraphNode *dst) {
-        possibleAdjNodes.insert(possibleAdjNodes.end(), dst);
+    void addPossibleAdj(GraphNode &dst) {
+        possibleAdjNodes.insert(possibleAdjNodes.end(), &dst);
         availableAdj += 1;
     }
 
-    void removePossibleAdj(GraphNode *dst) {
-        possibleAdjNodes.remove(dst);
+    void removePossibleAdj(GraphNode &dst) {
+        possibleAdjNodes.remove(&dst);
         availableAdj -= 1;
     }
 
@@ -73,8 +73,8 @@ public:
         return std::next(possibleAdjNodes.cend(), -index-1);
     }
 
-    bool adjContains(GraphNode * query) {
-        auto result = std::find(adjNodes.begin(), adjNodes.end(),query);
+    bool adjContains(GraphNode & query) {
+        auto result = std::find(adjNodes.begin(), adjNodes.end(),&query);
         return result != adjNodes.end();
     }
 
@@ -83,7 +83,7 @@ public:
         availableAdj -= 1;
     }
 
-    std::list<GraphNode *> getPossibleAdj() {
+    std::list<GraphNode *>& getPossibleAdj() {
         return possibleAdjNodes;
     };
 
@@ -92,11 +92,16 @@ public:
         availableAdj = 0;
     }
 
-    void addAdj(GraphNode *dst) {
+    void addAdj(GraphNode &dst) {
         // Forward edge
-        adjNodes.insert(adjNodes.end(), dst);
+        adjNodes.insert(adjNodes.end(), &dst);
         // Reverse edge (for calculating in-degree of dst other node)
-        dst->addRevAdj(this);
+        dst.addRevAdj(*this);
+    }
+
+    void removeLastAdj(GraphNode &dst) {
+        adjNodes.erase(std::next(adjNodes.end(), -1));
+        dst.removeRevAdj(*this);
     }
 
     void setPosInHeap(int index) {
@@ -111,8 +116,12 @@ public:
         return revAdjNodes;
     }
 
-    void addRevAdj(GraphNode* src) {
-        revAdjNodes.insert(src);
+    void addRevAdj(GraphNode& src) {
+        revAdjNodes.insert(&src);
+    }
+
+    void removeRevAdj(GraphNode& src) {
+        revAdjNodes.erase(&src);
     }
 
     std::list<GraphNode *> getAdj() {
@@ -131,8 +140,8 @@ public:
         return adjNodes.size();
     }
 
-    void setParent(GraphNode *newParent) {
-        parent = newParent;
+    void setParent(GraphNode &newParent) {
+        parent = &newParent;
     }
 
     GraphNode *getParent() {
@@ -175,8 +184,6 @@ public:
         color = newColor;
     }
 
-
-
     bool operator==(GraphNode const & other) const {
         return id == other.id;
     }
@@ -191,8 +198,8 @@ public:
 };
 
 struct Edge {
-    GraphNode *src;
-    GraphNode *dst;
+    GraphNode &src;
+    GraphNode &dst;
 };
 
 #endif //ATTACKGRAPHGENERATOR_GRAPHNODE_HPP

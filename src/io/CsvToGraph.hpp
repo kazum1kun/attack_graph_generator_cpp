@@ -60,7 +60,7 @@ AttackGraph csvToGraph(const std::string& path) {
         double prob = std::stod(tokens[3]);
 
         const auto node = new GraphNode(nodeId, type, name);
-        graph.addNode(node);
+        graph.addNode(*node);
     }
 
     // Construct edges
