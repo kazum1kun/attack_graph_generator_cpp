@@ -7,207 +7,128 @@ class PriorityQueue {
 private:
     int capacity;  /* max size of the heap */
     int size;      /* current size of the heap */
-    GraphNode *H;  /* array of pointers to elements */
+    GraphNode **nodes;  /* array of pointers to elements */
 public:
-    PriorityQueue (int capacity)
+    explicit PriorityQueue (int capacity)
     {
-
-        if (!heap){
-            fprintf(stderr, "Error: cannot allocate memory for heap\n");
-        }else{
-            heap->H = (pVERTEX *) calloc(capacity+1, sizeof(pVERTEX));
-            if (!heap->H){
-                fprintf(stderr, "Error: cannot allocate memory for heap array\n");
-            }
-            heap->capacity = capacity;
-            heap->size = 0;
-        }
-        // printf("END heapInit\n");
-        return heap;
+       nodes = new GraphNode*[capacity + 1]();
+       this->capacity = capacity;
+       this->size = 0;
     }
-//===========================================================================
-
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void heapReset(HEAP *pHeap)
-    {
-        // printf("BGN heapReset\n");
-        pHeap->size = 0;
-        // printf("END heapReset\n");
+    ~PriorityQueue() {
+        delete[] nodes;
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void heapFree(HEAP *heap)
+    void reset()
     {
-        free(heap->H);
-        free(heap);
+        delete[] nodes;
+        nodes = new GraphNode*[capacity + 1]();
+        size = 0;
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void heapPrint(HEAP *heap)
+    void print()
     {
-        // printf("BGN heapPrint\n");
         int i;
         printf("-----\n");
-        printf("capacity=%d, size=%d\n", heap->capacity, heap->size);
-        for (i=1; i<heap->size; i++) printf("%4d::%f, ", heap->H[i]->index, heap->H[i]->height);
-        if (heap->size > 0) printf("%4d::%f\n", heap->H[i]->index, heap->H[heap->size]->height);
+        printf("capacity=%d, size=%d\n", capacity, size);
+        for (i=1; i<=size; i++) printf("%4d::%f, ", nodes[i]->getId(), nodes[i]->getWeight());
         printf("=====\n");
-        // printf("END heapPrint\n");
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void MovingUp (HEAP *heap, int pos)
+    // Recursion
+    void siftUp (int pos)
     {
-        pVERTEX temp;
         int parent;
 
-        // printf("BGN MovingUp\n");
         parent = pos/2;
-        if (pos > 1 && pos <= heap->size && heap->H[pos]->height < heap->H[parent]->height)
+        if (pos > 1 && pos <= size && nodes[pos]->getWeight() < nodes[parent]->getWeight())
         {
-            temp = heap->H[pos];
-            heap->H[pos] = heap->H[parent];
-            heap->H[parent] = temp;
+            std::swap(nodes[pos], nodes[parent]);
 
-            heap->H[pos]->pos = pos;
-            heap->H[parent]->pos = parent;
+            nodes[pos]->setPosInHeap(pos);
+            nodes[parent]->setPosInHeap(parent);
 
-            MovingUp(heap, parent);
+            siftUp(parent);
         }
-        // printf("END MovingUp\n");
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void MovingDown (HEAP *heap, int pos)
+    // Recursion
+    void siftDown (int pos)
     {
-        pVERTEX temp;
         int l, r, smallest;
-        // printf("BGN MovingDown\n");
 
-        l = pos*2; r = l+1;
+        l = pos*2;
+        r = l+1;
 
-        if (l <= heap->size && heap->H[l]->height < heap->H[pos]->height)
+        if (l <= size && nodes[l]->getWeight() < nodes[pos]->getWeight())
             smallest = l;
         else
             smallest = pos;
 
-        if (r <= heap->size && heap->H[r]->height < heap->H[smallest]->height)
+        if (r <= size && nodes[r]->getWeight() < nodes[smallest]->getWeight())
             smallest = r;
 
         if (smallest != pos){
-            temp = heap->H[smallest];
-            heap->H[smallest] = heap->H[pos];
-            heap->H[pos] = temp;
+            std::swap(nodes[pos], nodes[smallest]);
 
-            heap->H[smallest]->pos = smallest;
-            heap->H[pos]->pos = pos;
+            nodes[pos]->setPosInHeap(pos);
+            nodes[smallest]->setPosInHeap(smallest);
 
-            MovingDown(heap, smallest);
-            // printf("END MovingDown\n");
+            siftDown( smallest);
         }
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    void BuildHeap (HEAP *heap)
+    void build()
     {
-        // printf("BGN BuildHeap\n");
         int i;
-        for (i=heap->size/2; i>0; i--) MovingDown(heap, i);
-        // printf("END BuildHeap\n");
+        for (i=size/2; i>0; i--) siftDown(i);
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    int HeapInsert(HEAP *heap, pVERTEX item)
+    int insert(GraphNode *node)
     {
-        // printf("BGN HeapInsert\n");
-        if (heap->size >= heap->capacity){
-            printf("Error in HeapInsert: Heap full... Capacity=%d, Size=%d\n", heap->capacity, heap->size);
-            // printf("END HeapInsert with Error\n");
+        if (size >= capacity){
+            printf("Error inserting node to pq: pq is full. Capacity=%d, Size=%d\n", capacity, size);
             return 1;
         }
-        heap->size++;
-        heap->H[heap->size] = item;
-        heap->H[heap->size]->pos = heap->size;
+        size += 1;
+        nodes[size] = node;
+        nodes[size]->setPosInHeap(size);
 
-        MovingUp(heap, heap->size);
+        siftUp(size);
 
-        // printf("END HeapInsert\n");
         return 0;
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    int DecreaseKey (HEAP *heap, int pos, float newKey)
+    int decreaseKey (int pos, double newKey)
     {
-        // printf("BGN DecreaseKey\n");
-        if (pos < 1 || pos > heap->size || newKey >= heap->H[pos]->height){
-            printf("Error in DecreaseKey\n");
-            // printf("END DecreaseKey with Error\n");
+        if (pos < 1 || pos > size || newKey >= nodes[pos]->getWeight()){
+            printf("Error in decreaseKey\n");
             return 1;
         }
 
-        heap->H[pos]->height = newKey;
-        MovingUp(heap, pos);
+        nodes[pos]->setWeight(newKey);
+        siftUp(pos);
 
-        // printf("END DecreaseKey\n");
         return 0;
     }
-//===========================================================================
 
-
-//===========================================================================
-// 2022-1026: GLX
-//===========================================================================
-    pVERTEX ExtractMin (HEAP *heap)
+    GraphNode *extractMin ()
     {
-        pVERTEX min, last;
-        // printf("BGN ExtractMin\n");
+        GraphNode *min, *last;
 
-        if (heap->size <= 0){
-            printf("Error in ExtractMin: heap empty\n");
-            // printf("END ExtractMin with Error\n");
-            return NULL;
+        if (size <= 0){
+            printf("Error extracting min: pq empty\n");
+            return nullptr;
         }
-        min = heap->H[1];
-        min->pos = -1;
+        min = nodes[1];
+        min->setPosInHeap(-1);
 
-        last = heap->H[heap->size--];
-        heap->H[1] = last;
-        heap->H[1]->pos = 1;
+        last = nodes[size--];
+        nodes[1] = last;
+        nodes[1]->setPosInHeap(1);
 
-        MovingDown(heap, 1);
+        siftDown(1);
 
-        // printf("END ExtractMin\n");
         return min;
     }
 };

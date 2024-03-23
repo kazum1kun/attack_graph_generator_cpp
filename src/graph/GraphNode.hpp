@@ -29,6 +29,7 @@ private:
     NodeColor color;
     GraphNode* parent;
     int done;
+    int posInHeap;
 
     std::list<GraphNode *> adjNodes;
     std::list<GraphNode *> possibleAdjNodes;
@@ -43,6 +44,7 @@ public:
         color = WHITE;
         done = 0;
         parent = nullptr;
+        posInHeap = -1;
 //
 //        predecessor = std::unordered_set<GraphNode *>{};
 //        adjNodes = std::list<GraphNode *>{};
@@ -95,6 +97,14 @@ public:
         adjNodes.insert(adjNodes.end(), dst);
         // Reverse edge (for calculating in-degree of dst other node)
         dst->addRevAdj(this);
+    }
+
+    void setPosInHeap(int index) {
+        posInHeap = index;
+    }
+
+    int getPosInHeap() const {
+        return posInHeap;
     }
 
     std::unordered_set<GraphNode *> getRevAdj() {
