@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
                                                                                       "  acrdSed: " << arcSed << "\n"
                                                                                                                  "  randW: "
                   << randW << "\n"
-                              "  verbosity: " << verbosity << "\n" << "  altgen: " << alt << "\n" << "test: " << test << std::endl;
+                              "  verbosity: " << verbosity << "\n" << "  altgen: " << alt << "\n" << "test: " << test << std::endl <<  std::endl;
     }
 
     auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, test, seed);

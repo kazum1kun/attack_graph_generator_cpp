@@ -3,6 +3,7 @@
 
 #include "AttackGraph.hpp"
 #include "ShortestTrace.hpp"
+#include "VirtualGraph.hpp"
 #include <string>
 #include <queue>
 #include <list>
@@ -16,12 +17,13 @@ extern bool manualStepping;
 // Check if adding an edge from src to dst will cause a cycle
 // An adaptation of the Kahn's algorithm
 bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
+    // Use a virtual graph for easy rollbacks
+    auto vg = VirtualGraph(&graph);
+
     // Pretend the edge exists
-    src.addAdj(dst);
+    vg.addEdge(&src, dst);
     size_t edgeCount = 0;
     std::queue<GraphNode *> q;
-    // Save the original inDegree info
-    std::unordered_map<GraphNode *, size_t> inDegree;
 
     // Scan the vertexes for leaf nodes
     for (auto &node: graph.getNodes()) {
@@ -30,8 +32,6 @@ bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
 
         if (deg == 0) q.push(node);
         else edgeCount += deg;
-
-        inDegree.insert({node, deg});
     }
 
     // "Remove" edges that originates from the source
@@ -40,15 +40,13 @@ bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
         q.pop();
 
         for (auto &v: u->getAdj()) {
-            inDegree.at(v) -= 1;
+            vg.removeEdge(u, *v);
             edgeCount -= 1;
-            if (inDegree.at(v) == 0) q.push(v);
+            if (v->getInDegree() == 0) q.push(v);
         }
     }
 
-    // Remove the fake edge
-    src.removeLastAdj(dst);
-
+    vg.rollback();
     return edgeCount > 0;
 }
 
@@ -58,38 +56,27 @@ inline bool addEdge(GraphNode *src, GraphNode &dst, const bool cycleOk, AttackGr
     }
     // Check for cycles if cycleOk is false (using Kahn's algorithm)
     if (!cycleOk && cycleExists(*src, dst, graph)) {
+        if (verbosity > 1) {
+            std::cout << "... failed: will form a cycle" << std::endl;
+        }
         return false;
     }
 
     if (src->adjContains(dst)) {
         if (verbosity > 1) {
-            std::cout << "...failed: already exists" << std::endl;
+            std::cout << "... failed: already exists" << std::endl;
         }
         return false;
     }
     if (*src == dst) {
         if (verbosity > 1) {
-            std::cout << "...failed: adding a self loop" << std::endl;
+            std::cout << "... failed: adding a self loop" << std::endl;
         }
         return false;
     }
     src->addAdj(dst);
     if (verbosity > 1) {
-        std::cout << "...ok" << std::endl;
-    }
-
-    // Update pred info for non-cycle graphs
-    if (!cycleOk) {
-        std::queue<GraphNode *> q;
-
-        q.push(&dst);
-        while (!q.empty()) {
-            auto node = q.front();
-            for (auto adj: node->getAdj()) {
-                q.push(adj);
-            }
-            q.pop();
-        }
+        std::cout << "... ok.\n" << std::endl;
     }
 
     return true;
@@ -140,7 +127,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     }
 
     if (verbosity > 0) {
-        std::cout << "Node generation complete." << std::endl;
+        std::cout << "Node generation complete.\n" << std::endl;
     }
 
     if (manualStepping) {
@@ -150,7 +137,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
 
     if (verbosity > 0) {
-        std::cout << "Generating all possible edges" << std::endl;
+        std::cout << "Generating all possible edges...";
     }
 
     // Update the possible adjacent nodes at each node
@@ -168,6 +155,8 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             }
         }
     }
+
+    std::cout << " done.\n" << std::endl;
 
     if (verbosity > 2) {
         std::cout << "All possible edges: \n";
@@ -192,10 +181,9 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
     if (alt) {
         auto src = graph->getNodeAt(Random::get(numOr + numLeaf + 1, totalNode));
         auto dst = graph->getNodeAt(graph->getGoalId());
-        addEdge(src, *dst, cycleOk, *graph);
 
         if (verbosity > 1) {
-            std::cout << "Alt: generated an edge from" << src->getId() << "to " << dst->getId() << std::endl;
+            std::cout << "Alt: generated an edge from " << src->getId() << " to " << dst->getId() << std::endl;
         }
 
         if (relaxed) {
@@ -211,6 +199,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                 for (auto &d: src->getPossibleAdj()) {
                     std::cout << "Alt: removing edge: (" << src->getId() << ", " << d->getId() << ")" << std::endl;
                 }
+                std::cout << std::endl;
             }
 
             addEdge(src, *dst, cycleOk, *graph);
@@ -254,7 +243,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
         if (verbosity > 1) {
             std::cout << "Chosen index id: " << chosen
-                      << ", corresponding edge: (" << src->getId() << ", " << dst->getId() << ")";
+                      << ", corresponding edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
         }
 
         if (manualStepping) {
@@ -271,12 +260,13 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                         std::cout << "removing edge: (" << src->getId() << ", "
                                   << d->getId() << ")" << std::endl;
                     }
+                    std::cout << std::endl;
                 }
                 totalEdge -= src->getAvailNum();
                 src->clearPossibleAdj();
             } else {
                 if (verbosity > 1) {
-                    std::cout << "removing edge: (" << src->getId() << ", " << dst->getId() << ")" << std::endl;
+                    std::cout << "removing edge: (" << src->getId() << ", " << dst->getId() << ")\n" << std::endl;
                 }
                 totalEdge -= 1;
                 src->erasePossibleAdj(dstIt);

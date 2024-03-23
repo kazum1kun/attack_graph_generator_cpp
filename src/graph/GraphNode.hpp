@@ -98,8 +98,8 @@ public:
         dst.addRevAdj(*this);
     }
 
-    void removeLastAdj(GraphNode &dst) {
-        adjNodes.erase(std::next(adjNodes.end(), -1));
+    void removeAdj(GraphNode &dst) {
+        adjNodes.remove(&dst);
         dst.removeRevAdj(*this);
     }
 
