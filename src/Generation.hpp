@@ -12,11 +12,12 @@
 
 extern int verbosity;
 extern bool manualStepping;
+extern int returnCode;
 
 
 // Check if adding an edge from src to dst will cause a cycle
 // An adaptation of the Kahn's algorithm
-bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
+inline bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
     // Use a virtual graph for easy rollbacks
     auto vg = VirtualGraph(&graph);
 
@@ -74,6 +75,9 @@ inline bool addEdge(GraphNode *src, GraphNode &dst, const bool cycleOk, AttackGr
         }
         return false;
     }
+
+    if (dst.adjContains(*src)) return false;
+
     src->addAdj(dst);
     if (verbosity > 1) {
         std::cout << "... ok.\n" << std::endl;
@@ -82,8 +86,48 @@ inline bool addEdge(GraphNode *src, GraphNode &dst, const bool cycleOk, AttackGr
     return true;
 }
 
+// Prune a generated graph to recursively remove all nodes with 0 incoming edges
+// A modified cycleExist procedure
+inline int pruneGraph(AttackGraph *graph) {
+    std::queue<GraphNode *> q;
+    int removedNode = 0;
+    int removedEdge = 0;
+
+    // Scan the vertexes for leaf nodes
+    for (auto &node: graph->getNodes()) {
+        if (node == nullptr) continue;
+        if (node->getType() == LEAF) continue;
+        auto deg = node->getInDegree();
+
+        if (deg == 0) q.push(node);
+    }
+
+    while (!q.empty()) {
+        auto u = q.front();
+        q.pop();
+
+        for (auto &v: u->getAdj()) {
+            u->removeAdj(*v);
+            if (v->getInDegree() == 0) q.push(v);
+            removedEdge += 1;
+        }
+
+        if (verbosity > 1) {
+            std::cout << "Pruning: removing node " << u->getId() << " , type " << u->getType() << std::endl;
+        }
+
+        graph->removeNode(u->getId());
+        removedNode += 1;
+    }
+
+    std::cout << "Pruning: removed " << removedNode << " nodes and " << removedEdge << " edges." << std::endl;
+
+    return removedNode;
+}
+
 inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int numLeaf,
                                   int numEdge, const bool cycleOk, const bool relaxed, const bool alt, bool test,
+                                  bool prune,
                                   const unsigned long seed) {
     const int totalNode = numOr + numAnd + numLeaf;
     int totalEdge = 0;
@@ -272,6 +316,13 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
                 src->erasePossibleAdj(dstIt);
             }
             numEdge -= 1;
+        } else {
+            // Remove the outgoing edge regardless (if it fails, we remove it to prevent future queries about this edge)
+            if (verbosity > 1) {
+                std::cout << "removing edge: (" << src->getId() << ", " << dst->getId() << ")\n" << std::endl;
+            }
+            totalEdge -= 1;
+            src->erasePossibleAdj(dstIt);
         }
 
         if (manualStepping) {
@@ -293,6 +344,16 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "\nr>";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
+
+        if (totalEdge == 0 && numEdge > 0) {
+            std::cout << "WARN: graphgen ran out of possible edges. " << numEdge << " edges cannot be added." << std::endl;
+            returnCode &= 0b0001;
+            break;
+        }
+    }
+
+    if (prune) {
+        pruneGraph(graph);
     }
 
     if (test) {
@@ -302,6 +363,7 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
             std::cout << "yes" << std::endl;
         } else {
             std::cout << "no" << std::endl;
+            returnCode &= 0b0010;
         }
     }
 

@@ -4,8 +4,10 @@
 #include "GraphToCsv.hpp"
 #include "CsvToPdf.hpp"
 
+// Global variables
 int verbosity = 0;
 bool manualStepping = false;
+int returnCode = 0b0;
 
 int main(int argc, char *argv[]) {
     // Program argument parser
@@ -73,6 +75,10 @@ int main(int argc, char *argv[]) {
             .help("test the generated graph if an attack trace exists")
             .nargs(0)
             .flag();
+    program.add_argument("-p", "--prune")
+            .help("prune generated graph to remove OR/AND nodes with no incoming edges")
+            .nargs(0)
+            .flag();
     try {
         program.parse_args(argc, argv);
     }
@@ -94,6 +100,7 @@ int main(int argc, char *argv[]) {
     auto randW = program.get<bool>("-r");
     auto alt = program.get<bool>("--alt");
     auto test = program.get<bool>("-t");
+    auto prune = program.get<bool>("-p");
     manualStepping = program.get<bool>("--manual");
 
     int numOr = nodes[0];
@@ -133,10 +140,11 @@ int main(int argc, char *argv[]) {
                                                                                       "  acrdSed: " << arcSed << "\n"
                                                                                                                  "  randW: "
                   << randW << "\n"
-                              "  verbosity: " << verbosity << "\n" << "  altgen: " << alt << "\n" << "test: " << test << std::endl <<  std::endl;
+                              "  verbosity: " << verbosity << "\n" << "  altgen: " << alt << "\n" << "test: " << test << "\n"
+                              << "prune: " << prune << "\n" << std::endl <<  std::endl;
     }
 
-    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, test, seed);
+    auto graph = generateGraph(numOr, numAnd, numLeaf, edge, cycle, relaxed, alt, test, prune, seed);
 
     if (verbosity > 0) {
         std::cout << "Graph generated, saving it to files." << std::endl;
@@ -149,4 +157,9 @@ int main(int argc, char *argv[]) {
         }
         csvToPdf(outDir, arcSed, vertSed);
     }
+
+    // Return code bitwise masks (0 = no warning)
+    // 0001 -> failed to fulfill all the edges
+    // 0010 -> graph has no feasible solution
+    return returnCode;
 }

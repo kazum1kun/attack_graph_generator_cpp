@@ -26,7 +26,13 @@ public:
     }
 
     void addNode(GraphNode &node) {
-        this->nodes[node.getId()] = &node;
+        nodes[node.getId()] = &node;
+    }
+
+    void removeNode(int nodeId) {
+        nodes.erase(std::remove_if(nodes.begin() + 1, nodes.end(),
+                       [&](GraphNode* node) {return node->getId() == nodeId;}));
+        size -= 1;
     }
 
     void addEdgeById(int src, int dst) const {
@@ -34,7 +40,7 @@ public:
     }
 
     [[nodiscard]] GraphNode *getNodeAt(int index) const {
-        return this->nodes[index];
+        return nodes[index];
     }
 
     std::vector<GraphNode *> &getNodes() {
@@ -42,11 +48,11 @@ public:
     }
 
     [[nodiscard]] int getGoalId() const {
-        return this->goal;
+        return goal;
     }
 
     [[nodiscard]] int getSize() const {
-        return this->size;
+        return size;
     }
 
     [[nodiscard]] int getNumEdges() const {
