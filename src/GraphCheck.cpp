@@ -3,7 +3,6 @@
 #include "CsvToGraph.hpp"
 #include "ShortestTrace.hpp"
 #include <string>
-#include <set>
 
 namespace fs = std::filesystem;
 
@@ -15,15 +14,15 @@ int main(int argc, char *argv[]) {
 
     fs::path dirPath = argv[1];
     if (!fs::is_directory(dirPath)) {
-        std::cout << argv[1] << " does not exist, please check your input." << std::endl;
+        std::cout << dirPath << " does not exist, please check your input." << std::endl;
         std::exit(1);
     }
 
-    for (auto &entry: dirPath) {
+    for (auto &entry: fs::directory_iterator(dirPath)) {
         if (fs::is_directory(entry)) {
             // Check for ARCS.CSV and VERTICES.CSV
-            auto arcPath = entry / "ARCS.CSV";
-            auto vertPath = entry / "VERTICES.CSV";
+            auto arcPath = entry.path() / "ARCS.CSV";
+            auto vertPath = entry.path() / "VERTICES.CSV";
 
             if (!(fs::exists(arcPath) && fs::exists(vertPath))) continue;
 
@@ -40,7 +39,7 @@ int main(int argc, char *argv[]) {
             std::string hasCycle = cycleExists(graph) ? "✓ (yes)" : "✗ (no)";
             std::string hasTrace = (sat(graph) == std::nullopt) ? "✗ (no)" : "✓ (yes)";
 
-            std::cout << "==========" << entry.filename() << "==========\n";
+            std::cout << "==========" << entry.path().filename() << "==========\n";
             std::cout << "Total number of nodes: " << graph.getSize() << std::endl;
             std::cout << "├──OR nodes: " << numOr << std::endl;
             std::cout << "├──PF nodes: " << numPf << std::endl;
