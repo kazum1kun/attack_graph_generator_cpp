@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <list>
 #include <utility>
+#include <algorithm>
 #include "AttackGraph.hpp"
 
 enum NodeType {

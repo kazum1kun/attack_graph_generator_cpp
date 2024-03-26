@@ -3,7 +3,6 @@
 
 #include "AttackGraph.hpp"
 #include "ShortestTrace.hpp"
-#include "VirtualGraph.hpp"
 #include <string>
 #include <queue>
 #include <list>
@@ -15,48 +14,12 @@ extern bool manualStepping;
 extern int returnCode;
 
 
-// Check if adding an edge from src to dst will cause a cycle
-// An adaptation of the Kahn's algorithm
-inline bool cycleExists(GraphNode &src, GraphNode &dst, AttackGraph &graph) {
-    // Use a virtual graph for easy rollbacks
-    auto vg = VirtualGraph(&graph);
-
-    // Pretend the edge exists
-    vg.addEdge(&src, dst);
-    size_t edgeCount = 0;
-    std::queue<GraphNode *> q;
-
-    // Scan the vertexes for leaf nodes
-    for (auto &node: graph.getNodes()) {
-        if (node == nullptr) continue;
-        auto deg = node->getInDegree();
-
-        if (deg == 0) q.push(node);
-        else edgeCount += deg;
-    }
-
-    // "Remove" edges that originates from the source
-    while (!q.empty()) {
-        auto u = q.front();
-        q.pop();
-
-        for (auto &v: u->getAdj()) {
-            vg.removeEdge(u, *v);
-            edgeCount -= 1;
-            if (v->getInDegree() == 0) q.push(v);
-        }
-    }
-
-    vg.rollback();
-    return edgeCount > 0;
-}
-
 inline bool addEdge(GraphNode *src, GraphNode &dst, const bool cycleOk, AttackGraph &graph) {
     if (verbosity > 1) {
         std::cout << "Attempting to add edge from " << src->getId() << " to " << dst.getId();
     }
     // Check for cycles if cycleOk is false (using Kahn's algorithm)
-    if (!cycleOk && cycleExists(*src, dst, graph)) {
+    if (!cycleOk && cycleExists(graph, src, &dst)) {
         if (verbosity > 1) {
             std::cout << "... failed: will form a cycle" << std::endl;
         }
@@ -346,8 +309,9 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
         }
 
         if (totalEdge == 0 && numEdge > 0) {
-            std::cout << "WARN: graphgen ran out of possible edges. " << numEdge << " edges cannot be added." << std::endl;
-            returnCode &= 0b0001;
+            std::cout << "WARN: graphgen ran out of possible edges. " << numEdge << " edges cannot be added."
+                      << std::endl;
+            returnCode |= 0b0001;
             break;
         }
     }
@@ -358,12 +322,12 @@ inline AttackGraph *generateGraph(const int numOr, const int numAnd, const int n
 
     if (test) {
         std::cout << "Testing if the generated graph has a feasible solution: ";
-        auto result = Sat(*graph, std::nullopt);
+        auto result = sat(*graph);
         if (result != std::nullopt) {
             std::cout << "yes" << std::endl;
         } else {
             std::cout << "no" << std::endl;
-            returnCode &= 0b0010;
+            returnCode |= 0b0010;
         }
     }
 

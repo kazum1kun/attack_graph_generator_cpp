@@ -17,10 +17,11 @@ add_executable(AttackGraphGenerator src/main.cpp
 
 find_package(effolkronium_random REQUIRED)
 find_package(argparse REQUIRED)
+find_package(lazycsv REQUIRED)
 
 
 target_include_directories(AttackGraphGenerator
-        PRIVATE
+        PUBLIC
         ${PROJECT_SOURCE_DIR}/src/graph
         ${PROJECT_SOURCE_DIR}/src/io
         ${PROJECT_SOURCE_DIR}/src/sat
@@ -30,4 +31,24 @@ target_include_directories(AttackGraphGenerator
 target_link_libraries(AttackGraphGenerator
         effolkronium_random
         argparse::argparse
+
+)
+
+add_executable(GraphChecker src/GraphCheck.cpp
+        src/io/CsvToGraph.hpp
+        src/graph/AttackGraph.hpp
+        src/sat/ShortestTrace.hpp
+        src/priority_queue/PriorityQueue.hpp
+)
+
+target_include_directories(GraphChecker
+        PUBLIC
+        ${PROJECT_SOURCE_DIR}/src/io
+        ${PROJECT_SOURCE_DIR}/src/graph
+        ${PROJECT_SOURCE_DIR}/src/sat
+        ${PROJECT_SOURCE_DIR}/src/priority_queue
+)
+
+target_link_libraries(GraphChecker
+        lazycsv::lazycsv
 )

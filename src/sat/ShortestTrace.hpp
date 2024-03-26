@@ -3,6 +3,7 @@
 
 #include "AttackGraph.hpp"
 #include "PriorityQueue.hpp"
+#include "VirtualGraph.hpp"
 #include <optional>
 #include <vector>
 #include <queue>
@@ -35,7 +36,8 @@ std::forward_list<Edge> constructTrace(AttackGraph &graph) {
 }
 
 // Implements Alg. 1 of the IoTDI paper SAT(G)
-std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::optional<std::vector<double>> &weight) {
+std::optional<std::forward_list<Edge>> sat(AttackGraph &graph,
+                                           const std::optional<std::vector<double>> &weight = std::nullopt) {
     auto pq = PriorityQueue(graph.getSize());
     const double INFINITY = std::numeric_limits<double>::max();
 
@@ -89,6 +91,46 @@ std::optional<std::forward_list<Edge>> Sat(AttackGraph &graph, const std::option
     trace_found:
     // Extract the trace
     return constructTrace(graph);
+}
+
+// Check if adding an edge from src to dst will cause a cycle
+// An adaptation of the Kahn's algorithm
+inline bool cycleExists(AttackGraph &graph,
+                        std::optional<GraphNode*> src = std::nullopt, std::optional<GraphNode*> dst = std::nullopt) {
+    // Use a virtual graph for easy rollbacks
+    auto vg = VirtualGraph(&graph);
+
+    // Pretend the edge exists
+    if (src != std::nullopt && dst != std::nullopt) {
+        vg.addEdge(src.value(), *dst.value());
+    }
+
+    size_t edgeCount = 0;
+    std::queue<GraphNode *> q;
+
+    // Scan the vertexes for leaf nodes
+    for (auto &node: graph.getNodes()) {
+        if (node == nullptr) continue;
+        auto deg = node->getInDegree();
+
+        if (deg == 0) q.push(node);
+        else edgeCount += deg;
+    }
+
+    // "Remove" edges that originates from the source
+    while (!q.empty()) {
+        auto u = q.front();
+        q.pop();
+
+        for (auto &v: u->getAdj()) {
+            vg.removeEdge(u, *v);
+            edgeCount -= 1;
+            if (v->getInDegree() == 0) q.push(v);
+        }
+    }
+
+    vg.rollback();
+    return edgeCount > 0;
 }
 
 #endif //ATTACKGRAPHGENERATOR_SHORTESTTRACE_HPP

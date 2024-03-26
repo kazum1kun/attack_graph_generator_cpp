@@ -2,5 +2,6 @@
 # To keep your changes, remove these comment lines, but the plugin won't be able to modify your requirements
 
 requirements:
+  - "lazycsv/cci.20221117"
   - "argparse/3.0"
   - "effolkronium-random/1.5.0"
